@@ -54,6 +54,7 @@
 			printk(KERN_ERR "[K][ACPU] "x);		\
 	} while (0)
 
+extern unsigned int max_capped;
 
 /* Frequency switch modes. */
 #define SHOT_SWITCH		4
@@ -736,6 +737,9 @@ static int acpuclk_8x60_set_rate(int cpu, unsigned long rate,
 		rc = -EINVAL;
 		goto out;
 	}
+
+	if (max_capped && rate > max_capped)
+		rate = max_capped;
 
 	if (reason == SETRATE_CPUFREQ || reason == SETRATE_HOTPLUG)
 		mutex_lock(&drv_state.lock);
