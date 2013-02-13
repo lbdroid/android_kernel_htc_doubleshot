@@ -21,6 +21,9 @@
 #include <linux/interrupt.h>
 #include <linux/slab.h>
 #include <linux/wakelock.h>
+#ifdef CONFIG_OPTICALJOYSTICK_CRUCIAL
+#include <linux/curcial_oj.h>
+#endif
 
 #ifdef CONFIG_MFD_MAX8957
 static struct workqueue_struct *ki_queue;
@@ -143,6 +146,21 @@ static enum hrtimer_restart gpio_event_input_timer_func(struct hrtimer *timer)
 			pr_info("gpio_keys_scan_keys: key %x-%x, %d (%d) "
 				"changed to %d\n", ds->info->type,
 				key_entry->code, i, key_entry->gpio, pressed);
+#ifdef CONFIG_OPTICALJOYSTICK_CRUCIAL
+    if (key_entry->code == BTN_MOUSE) {
+      KEY_LOGD("gpio_keys_scan_keys: OJ action key %d-%d,"
+          "%d (%d) changed to %d\n",
+          ds->info->type, key_entry->code, i,
+          key_entry->gpio, pressed);
+      curcial_oj_send_key(BTN_MOUSE, pressed);
+    }
+#endif
+#ifdef CONFIG_MACH_DOUBLESHOT
+    if (key_entry->code == SW_LID) {
+      if (ds->info->set_qty_irq)
+        ds->info->set_qty_irq(pressed);
+    }
+#endif
 		input_event(ds->input_devs->dev[key_entry->dev], ds->info->type,
 			    key_entry->code, pressed);
 		sync_needed = true;
@@ -196,6 +214,15 @@ void keypad_report_keycode(struct gpio_key_state *ks)
 
 	pressed = gpio_get_value(key_entry->gpio) ^
 			!(ds->info->flags & GPIOEDF_ACTIVE_HIGH);
+
+#ifdef CONFIG_OPTICALJOYSTICK_CRUCIAL
+  if (ds->info->info.oj_btn && key_entry->code == BTN_MOUSE) {
+    curcial_oj_send_key(BTN_MOUST, pressed);
+    KEY_LOGD("%s:OJ key %d-%d, %d (%d) changed to %d\n",
+        ds->info->type, key_entry->code, keymap_index,
+        key_entry->gpio, pressed);
+  }
+#endif
 
 	if (key_entry->code == KEY_POWER) {
 		if (pressed)
