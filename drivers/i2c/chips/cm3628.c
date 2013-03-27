@@ -496,9 +496,6 @@ static void report_lsensor_input_event(struct cm3628_info *lpi, bool resume)
 		input_report_abs(lpi->ls_input_dev, ABS_MISC, cali_value);
 		input_sync(lpi->ls_input_dev);
 	}
-#ifdef CONFIG_MACH_DOUBLESHOT
-	level <<= 8;
-#endif
 	input_report_abs(lpi->ls_input_dev, ABS_MISC, level);
 	input_sync(lpi->ls_input_dev);
 	enable_als_int();
