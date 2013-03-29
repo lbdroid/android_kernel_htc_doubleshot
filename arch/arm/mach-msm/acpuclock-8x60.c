@@ -1037,7 +1037,7 @@ static __init struct clkctl_acpu_speed *select_freq_plan(void)
 
 #ifdef CONFIG_MACH_DOUBLESHOT
 	/* match max OC allowable */
-	max_khz = 1512000; //1728000;
+	max_khz = 1728000; //1512000
 	/* set everything to default to freq fast table regardless of efuse reading */
 	switch (pvs) {
 		case 0x0:
