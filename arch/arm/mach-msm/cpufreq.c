@@ -260,6 +260,7 @@ static void msm_cpufreq_early_suspend(struct early_suspend *h)
 				printk(KERN_INFO "[cmdline_maxscroff]: Limited freq to '%u'\n", curfreq);
 			}
 		}
+
 		mutex_unlock(&per_cpu(cpufreq_suspend, cpu).suspend_mutex);
 	}
 }
@@ -282,6 +283,7 @@ static void msm_cpufreq_late_resume(struct early_suspend *h)
 				printk(KERN_INFO "[cmdline_maxscroff]: Unlocking freq to '%u'\n", curfreq);
 			}
 		}
+
 		mutex_unlock(&per_cpu(cpufreq_suspend, cpu).suspend_mutex);
 	}
 }
