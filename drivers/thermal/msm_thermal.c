@@ -28,7 +28,7 @@
 
 //mid thermal limit
 #define DEF_ALLOWED_MID_HIGH 65
-#define DEF_ALLOWED_MID_FREQ 972000
+#define DEF_ALLOWED_MID_FREQ 648000
 
 //low thermal limit
 #define DEF_ALLOWED_LOW_HIGH 58
