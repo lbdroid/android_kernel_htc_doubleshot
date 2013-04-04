@@ -1524,7 +1524,6 @@ static void msm_hs_request_clock_on_locked(struct uart_port *uport) {
 
 	switch (msm_uport->clk_state) {
 	case MSM_HS_CLK_OFF:
-		wake_lock(&msm_uport->dma_wake_lock);
 		clk_enable(msm_uport->clk);
 		if (msm_uport->pclk)
 			ret = clk_enable(msm_uport->pclk);
@@ -1627,7 +1626,6 @@ static int msm_hs_startup(struct uart_port *uport)
 	tx->dma_base = dma_map_single(uport->dev, tx_buf->buf, UART_XMIT_SIZE,
 				      DMA_TO_DEVICE);
 
-	wake_lock(&msm_uport->dma_wake_lock);
 	/* turn on uart clk */
 	ret = msm_hs_init_clk(uport);
 	if (unlikely(ret)) {
