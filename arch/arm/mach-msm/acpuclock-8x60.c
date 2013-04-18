@@ -393,7 +393,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl_nom[] = {
 /* SCPLL frequencies = 2 * 27 MHz * L_VAL */
 #ifdef CONFIG_MACH_DOUBLESHOT
 static struct clkctl_acpu_speed acpu_freq_tbl_fast[] = {
-  { {1, 1},  96000,  ACPU_PLL_8, 3, 1, 0, 0,    L2(1),   400000, 0x03006000},
+  { {1, 1},  96000,  ACPU_PLL_8, 3, 1, 0, 0,    L2(1),   725000, 0x03006000},
   { {1, 1},  128000,  ACPU_PLL_8, 3, 1, 0, 0,    L2(1),   750000, 0x03006000},
   { {1, 1},  153600,  ACPU_PLL_8, 3, 1, 0, 0,    L2(1),   750000, 0x03006000},
   { {1, 1},  192000,  ACPU_PLL_8, 3, 0, 0, 0,    L2(1),   775000, 0x03006000},
