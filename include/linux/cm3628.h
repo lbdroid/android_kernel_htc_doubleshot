@@ -96,6 +96,7 @@ struct cm3628_platform_data {
 	int intr;
 	uint16_t levels[10];
 	uint16_t golden_adc;
+	/* have both because I'm too lazy to find the one actually being used */
 	int (*power)(int, uint8_t); /* power to the chip */
 	int (*re_power)(uint8_t); /* power to the chip */
 	uint8_t ALS_IT;
