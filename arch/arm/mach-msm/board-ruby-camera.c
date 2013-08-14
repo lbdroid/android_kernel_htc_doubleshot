@@ -476,7 +476,7 @@ static struct msm_camera_sensor_info msm_camera_sensor_s5k3h2yx_data = {
 };
 #endif	
 
-#ifdef CONFIG_MT9V113
+#ifdef CONFIG_MT9D015
 static struct msm_camera_sensor_platform_info sensor_mt9d015_board_info = {
 	.mount_angle = 270,
 	.mirror_flip = CAMERA_SENSOR_NONE,
