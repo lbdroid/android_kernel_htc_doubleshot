@@ -20,7 +20,8 @@
 #include <linux/bma250.h>
 #include <linux/gpio.h>
 #include <linux/delay.h>
-#include<linux/earlysuspend.h>
+#include <linux/module.h>
+#include <linux/earlysuspend.h>
 
 /*#define EARLY_SUSPEND_BMA 1*/
 
