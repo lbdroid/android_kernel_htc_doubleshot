@@ -141,6 +141,7 @@
 #include <linux/platform_data/qcom_crypto_device.h>
 #include "rpm_resources.h"
 #include "acpuclock.h"
+#include "board-storage-common-a.h"
 #include <mach/board_htc.h>
 
 #ifdef CONFIG_PERFLOCK
@@ -2328,22 +2329,6 @@ static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
 	.inject_rx_on_wakeup = 1,
 	.rx_to_inject = 0xFD,	
 	.gpio_config = configure_uart_gpios,
-	.exit_lpm_cb = bcm_bt_lpm_exit_lpm_locked,
-};
-
-static struct bcm_bt_lpm_platform_data bcm_bt_lpm_pdata = {
-	.gpio_wake = DOUBLESHOT_GPIO_BT_CHIP_WAKE,
-	.gpio_host_wake = DOUBLESHOT_GPIO_BT_HOST_WAKE,
-	.request_clock_off_locked = msm_hs_request_clock_off_locked,
-	.request_clock_on_locked = msm_hs_request_clock_on_locked,
-};
-
-struct platform_device doubleshot_bcm_bt_lpm_device = {
-	.name = "bcm_bt_lpm",
-	.id = 0,
-	.dev = {
-		.platform_data = &bcm_bt_lpm_pdata,
-	},
 };
 #endif
 
@@ -2820,7 +2805,7 @@ static struct tsens_platform_data pyr_tsens_pdata  = {
 		.tsens_factor		= 1000,
 		.hw_type		= MSM_8660,
 		.tsens_num_sensor	= 6,
-		.slope 			= 702,
+		.slope 			= {702},
 };
 
 /*
@@ -3359,7 +3344,6 @@ static struct platform_device *doubleshot_devices[] __initdata = {
 #endif
 #ifdef CONFIG_SERIAL_MSM_HS
 	&msm_device_uart_dm1,
-	&doubleshot_bcm_bt_lpm_device,
 #endif
 #ifdef CONFIG_MSM_SSBI
 	&msm_device_ssbi_pmic1,
@@ -3455,7 +3439,7 @@ static struct platform_device *doubleshot_devices[] __initdata = {
 #endif
 
 //	&msm_tsens_device,
-	&msm_rpm_device,
+	&msm8660_rpm_device,
 	&cable_detect_device,
 #ifdef CONFIG_BT
 	&doubleshot_rfkill,
@@ -3497,7 +3481,8 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 #ifdef CONFIG_ANDROID_PMEM
 static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
 {
-	pdata->start = start;
+	
+	
 	pdata->size = size;
 	pr_info("%s: allocating %lu bytes at 0x%p (0x%lx physical) for %s\n",
 		__func__, size, __va(start), start, pdata->name);
@@ -3523,10 +3508,10 @@ static void __init reserve_memory_for(struct android_pmem_platform_data *p)
 	/* If we have set a pre-defined PMEM start base,
 	 * no need to reserve it in system again.
 	 */
-	if (p->start == 0) {
+//	if (p->start == 0) {
 		pr_info("%s: reserving %lx bytes in memory pool for %s.\n", __func__, p->size, p->name);
 		msm8x60_reserve_table[p->memory_type].size += p->size;
-	}
+//	}
 }
 #endif
 
@@ -5419,6 +5404,7 @@ static void __init msm8x60_init_buses(void)
 #endif
 
 #ifdef CONFIG_SERIAL_MSM_HS
+	msm_uart_dm1_pdata.wakeup_irq = gpio_to_irq(DOUBLESHOT_GPIO_BT_HOST_WAKE);
 	msm_device_uart_dm1.dev.platform_data = &msm_uart_dm1_pdata;
 #endif
 
@@ -6181,7 +6167,9 @@ static struct mmc_platform_data msm8x60_sdc1_data = {
 	.msmsdcc_fmid	= 24000000,
 	.msmsdcc_fmax	= 48000000,
 	.nonremovable	= 1,
-	.pclk_src_dfab	= 1,
+	.hc_erase_group_def = 1,
+	.msm_bus_voting_data = &sps_to_ddr_bus_voting_data,
+	.bkops_support = 1,
 };
 #endif
 
@@ -6259,7 +6247,6 @@ static void __init msm8x60_init_mmc(void)
 	sdcc_vreg_data[0].vccq_data->set_voltage_sup = 0;
 	sdcc_vreg_data[0].vccq_data->always_on = 1;
 
-	msm8x60_sdc1_data.swfi_latency = msm_rpm_get_swfi_latency();
 	msm_add_sdcc(1, &msm8x60_sdc1_data);
 #endif
 #ifdef CONFIG_MMC_MSM_SDC2_SUPPORT
