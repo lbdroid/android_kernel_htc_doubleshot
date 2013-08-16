@@ -48,8 +48,6 @@ static struct gpiomux_setting i2c_suspended_config = {
 	.pull = GPIOMUX_PULL_NONE,
 };
 
-<<<<<<< HEAD
-=======
 #if defined(CONFIG_MACH_VILLEC2)
 /* This I2C active configuration applies to GSBI12 */
 static struct gpiomux_setting i2c_active_gsbi12 = {
@@ -66,7 +64,6 @@ static struct gpiomux_setting i2c_suspended_gsbi12_config = {
 };
 #endif
 
->>>>>>> b97d840... Add more files for ruby
 static struct gpiomux_setting ps_hold = {
 	.func = GPIOMUX_FUNC_1,
 	.drv = GPIOMUX_DRV_12MA,
@@ -487,9 +484,8 @@ static struct msm_gpiomux_config msm8x60_gsbi_configs[] __initdata = {
 			[GPIOMUX_ACTIVE]    = &i2c_active,
 		},
 	},
-<<<<<<< HEAD
-/* This pin in Rider and Shooter is not used, do not operate it. */
-#if !(defined(CONFIG_MACH_RIDER) || defined(CONFIG_MACH_SHOOTER))
+/* This pin in Rider, Shooter, and VilleC2 is not used, do not operate it. */
+#if !(defined(CONFIG_MACH_RIDER) || defined(CONFIG_MACH_SHOOTER) || defined(CONFIG_MACH_SHOOTER_U) || defined(CONFIG_MACH_SHOOTER_CT) || defined(CONFIG_MACH_VILLEC2))
 	{
 		.gpio      = 44,
 		.settings = {
@@ -497,501 +493,6 @@ static struct msm_gpiomux_config msm8x60_gsbi_configs[] __initdata = {
 			[GPIOMUX_ACTIVE]    = &i2c_active,
 		},
 	},
-#endif
-};
-
-static struct msm_gpiomux_config msm8x60_fluid_gsbi_configs[] __initdata = {
-	{
-		.gpio      = 70,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &spi_suspended_config,
-			[GPIOMUX_ACTIVE]    = &spi_active,
-		},
-	},
-	{
-		.gpio      = 72,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &spi_suspended_cs_config,
-			[GPIOMUX_ACTIVE]    = &spi_active,
-		},
-	},
-	{
-		.gpio      = 73,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &spi_suspended_config,
-			[GPIOMUX_ACTIVE]    = &spi_active,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_ebi2_configs[] __initdata = {
-	{
-		.gpio      = 40,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_cs2,
-		},
-	},
-	{
-		.gpio      = 123,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 124,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 125,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 126,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 127,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 128,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 129,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 130,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-#if defined(CONFIG_USB_PEHCI_HCD) || defined(CONFIG_USB_PEHCI_HCD_MODULE)
-	/* ISP VDD_3V3_EN */
-	{
-		.gpio      = 132,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_cs4,
-		},
-	},
-#endif
-	{
-		.gpio      = 133,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_cs3,
-		},
-	},
-	{
-		.gpio      = 135,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 136,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 137,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 138,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 139,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 140,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 141,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 142,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 143,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 144,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 145,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 146,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 147,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 148,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 149,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 150,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_a_d,
-		},
-	},
-	{
-		.gpio      = 151,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_oe,
-		},
-	},
-	{
-		.gpio      = 153,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_adv,
-		},
-	},
-	{
-		.gpio      = 157,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ebi2_we,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_uart_configs[] __initdata = {
-	{ /* UARTDM_TX */
-		.gpio      = 53,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart1dm_active,
-			[GPIOMUX_SUSPENDED] = &uart1dm_suspended,
-		},
-	},
-	{ /* UARTDM_RX */
-		.gpio      = 54,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart1dm_active,
-			[GPIOMUX_SUSPENDED] = &uart1dm_suspended,
-		},
-	},
-	{ /* UARTDM_CTS */
-		.gpio      = 55,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart1dm_active,
-			[GPIOMUX_SUSPENDED] = &uart1dm_suspended,
-		},
-	},
-	{ /* UARTDM_RFR */
-		.gpio      = 56,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart1dm_active,
-			[GPIOMUX_SUSPENDED] = &uart1dm_suspended,
-		},
-	},
-};
-
-#ifdef CONFIG_MSM_GSBI9_UART
-static struct msm_gpiomux_config msm8x60_charm_uart_configs[] __initdata = {
-	{ /* UART9DM  RX */
-		.gpio	   = 66,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart9dm_active,
-			[GPIOMUX_SUSPENDED] = &gsbi9,
-		},
-	},
-	{ /* UART9DM TX */
-		.gpio	   = 67,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &uart9dm_active,
-			[GPIOMUX_SUSPENDED] = &gsbi9,
-		},
-	},
-};
-#endif
-
-static struct msm_gpiomux_config msm8x60_ts_configs[] __initdata = {
-	{
-		/* TS_ATTN */
-		.gpio = 58,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ts_suspended,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_tmg200_configs[] __initdata = {
-	{
-		.gpio = 61,
-		.settings = {
-			[GPIOMUX_ACTIVE] = &tm_active,
-			[GPIOMUX_SUSPENDED] = &tm_suspended,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_tma300_configs[] __initdata = {
-	{
-		.gpio = 61,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &tma_active,
-			[GPIOMUX_SUSPENDED] = &tm_suspended,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_aux_pcm_configs[] __initdata = {
-	{
-		.gpio = 111,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &aux_pcm_active_config,
-			[GPIOMUX_SUSPENDED] = &aux_pcm_suspend_config,
-		},
-	},
-	{
-		.gpio = 112,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &aux_pcm_active_config,
-			[GPIOMUX_SUSPENDED] = &aux_pcm_suspend_config,
-		},
-	},
-	{
-		.gpio = 113,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &aux_pcm_active_config,
-			[GPIOMUX_SUSPENDED] = &aux_pcm_suspend_config,
-		},
-	},
-	{
-		.gpio = 114,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &aux_pcm_active_config,
-			[GPIOMUX_SUSPENDED] = &aux_pcm_suspend_config,
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_sdc_configs[] __initdata = {
-	/* SDCC1 data[0] */
-	{
-		.gpio = 159,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_0_3_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[1] */
-	{
-		.gpio = 160,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_0_3_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[2] */
-	{
-		.gpio = 161,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_0_3_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[3] */
-	{
-		.gpio = 162,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_0_3_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[4] */
-	{
-		.gpio = 163,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_4_7_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_4_7_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[5] */
-	{
-		.gpio = 164,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_4_7_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_4_7_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[6] */
-	{
-		.gpio = 165,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_4_7_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_4_7_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 data[7] */
-	{
-		.gpio = 166,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_4_7_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_4_7_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 CLK */
-	{
-		.gpio = 167,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_clk_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_clk_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-	/* SDCC1 CMD */
-	{
-		.gpio = 168,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc1_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc1_dat_0_3_cmd_actv_cfg, /*&sdcc1_suspend_config,*/
-		},
-	},
-};
-
-static struct msm_gpiomux_config msm8x60_charm_sdc_configs[] __initdata = {
-	/* SDCC5 cmd */
-	{
-		.gpio = 95,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* SDCC5 data[3]*/
-	{
-		.gpio = 96,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* SDCC5 clk */
-	{
-		.gpio = 97,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_clk_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* SDCC5 data[2]*/
-	{
-		.gpio = 98,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* SDCC5 data[1]*/
-	{
-		.gpio = 99,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* SDCC5 data[0]*/
-	{
-		.gpio = 100,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc5_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc5_suspend_config,
-		},
-	},
-	/* MDM2AP_SYNC */
-	{
-		.gpio = 129,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &mdm2ap_sync_active_cfg,
-			[GPIOMUX_SUSPENDED] = &mdm2ap_sync_suspend_cfg,
-		},
-	},
-
-	/* MDM2AP_VDDMIN */
-	{
-		.gpio = 140,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &mdm2ap_vddmin_active_cfg,
-			[GPIOMUX_SUSPENDED] = &mdm2ap_vddmin_suspend_cfg,
-		},
-	},
-	/* SDCC2 data[0] */
-=======
-/* This pin in Rider, Shooter, and VilleC2 is not used, do not operate it. */
-#if !(defined(CONFIG_MACH_RIDER) || defined(CONFIG_MACH_SHOOTER) || defined(CONFIG_MACH_SHOOTER_U) || defined(CONFIG_MACH_SHOOTER_CT) || defined(CONFIG_MACH_VILLEC2))
->>>>>>> b97d840... Add more files for ruby
-	{
-		.gpio = 143,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc2_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc2_suspend_config,
-		},
-	},
-<<<<<<< HEAD
-	/* SDCC2 data[1] */
-	{
-		.gpio = 144,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &sdcc2_dat_0_3_cmd_actv_cfg,
-			[GPIOMUX_SUSPENDED] = &sdcc2_suspend_config,
-		},
-	},
-=======
 #endif
 #if defined(CONFIG_MACH_VILLEC2)
 	{
@@ -1530,7 +1031,6 @@ static struct msm_gpiomux_config msm8x60_charm_sdc_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &sdcc2_suspend_config,
 		},
 	},
->>>>>>> b97d840... Add more files for ruby
 	/* SDCC2 data[2] */
 	{
 		.gpio = 145,
@@ -2114,8 +1614,6 @@ msm8x60_pyramid_gpiomux_cfgs[] __initdata = {
 };
 
 struct msm_gpiomux_configs
-<<<<<<< HEAD
-=======
 msm8x60_doubleshot_gpiomux_cfgs[] __initdata = {
 		{msm8x60_gsbi_configs, ARRAY_SIZE(msm8x60_gsbi_configs)},
 		{msm8x60_uart_configs, ARRAY_SIZE(msm8x60_uart_configs)},
@@ -2138,7 +1636,6 @@ msm8x60_doubleshot_gpiomux_cfgs[] __initdata = {
 };
 
 struct msm_gpiomux_configs
->>>>>>> b97d840... Add more files for ruby
 msm8x60_shooter_gpiomux_cfgs[] __initdata = {
 		{msm8x60_gsbi_configs, ARRAY_SIZE(msm8x60_gsbi_configs)},
 		{msm8x60_uart_configs, ARRAY_SIZE(msm8x60_uart_configs)},
@@ -2253,9 +1750,6 @@ msm8x60_rider_gpiomux_cfgs[] __initdata = {
 	{NULL, 0},
 };
 
-<<<<<<< HEAD
-
-=======
 struct msm_gpiomux_configs
 msm8x60_villec2_gpiomux_cfgs[] __initdata = {
 	{msm8x60_gsbi_configs, ARRAY_SIZE(msm8x60_gsbi_configs)},
@@ -2280,7 +1774,6 @@ msm8x60_villec2_gpiomux_cfgs[] __initdata = {
 #endif
 	{NULL, 0},
 };
->>>>>>> b97d840... Add more files for ruby
 
 /* gpiomux data for HTC Vigor device */
 struct msm_gpiomux_configs
