@@ -964,6 +964,33 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 	},
 };
 
+static struct msm_rpmrs_platform_data msm_rpmrs_data __initdata = {
+  .levels = &msm_rpmrs_levels[0],
+  .num_levels = ARRAY_SIZE(msm_rpmrs_levels),
+  .vdd_mem_levels  = {
+    [MSM_RPMRS_VDD_MEM_RET_LOW]     = 500,
+    [MSM_RPMRS_VDD_MEM_RET_HIGH]    = 750,
+    [MSM_RPMRS_VDD_MEM_ACTIVE]      = 1000,
+    [MSM_RPMRS_VDD_MEM_MAX]         = 1325,
+  },
+  .vdd_dig_levels = {
+    [MSM_RPMRS_VDD_DIG_RET_LOW]     = 500,
+    [MSM_RPMRS_VDD_DIG_RET_HIGH]    = 750,
+    [MSM_RPMRS_VDD_DIG_ACTIVE]      = 1000,
+    [MSM_RPMRS_VDD_DIG_MAX]         = 1250,
+  },
+  .vdd_mask = 0xFFF,
+  .rpmrs_target_id = {
+    [MSM_RPMRS_ID_PXO_CLK]          = MSM_RPM_ID_PXO_CLK,
+    [MSM_RPMRS_ID_L2_CACHE_CTL]     = MSM_RPM_ID_APPS_L2_CACHE_CTL,
+    [MSM_RPMRS_ID_VDD_DIG_0]        = MSM_RPM_ID_SMPS1_0,
+    [MSM_RPMRS_ID_VDD_DIG_1]        = MSM_RPM_ID_SMPS1_1,
+    [MSM_RPMRS_ID_VDD_MEM_0]        = MSM_RPM_ID_SMPS0_0,
+    [MSM_RPMRS_ID_VDD_MEM_1]        = MSM_RPM_ID_SMPS0_1,
+    [MSM_RPMRS_ID_RPM_CTL]          = MSM_RPM_ID_TRIGGER_SET_FROM,
+  },
+};
+
 #if defined(CONFIG_USB_PEHCI_HCD) || defined(CONFIG_USB_PEHCI_HCD_MODULE)
 
 #define ISP1763_INT_GPIO		117
@@ -6458,9 +6485,9 @@ static struct msm_rpm_platform_data msm_rpm_data = {
 
 	.irq_ack = RPM_SCSS_CPU0_GP_HIGH_IRQ,
 	.irq_err = RPM_SCSS_CPU0_GP_LOW_IRQ,
-	.irq_vmpm = RPM_SCSS_CPU0_GP_MEDIUM_IRQ,
-	.msm_apps_ipc_rpm_reg = MSM_GCC_BASE + 0x008,
-	.msm_apps_ipc_rpm_val = 4,
+	.irq_wakeup = RPM_SCSS_CPU0_GP_MEDIUM_IRQ,
+	.ipc_rpm_reg = MSM_GCC_BASE + 0x008,
+	.ipc_rpm_val = 4,
 };
 #endif
 
@@ -6563,8 +6590,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #ifdef CONFIG_MSM_RPM
 	BUG_ON(msm_rpm_init(&msm_rpm_data));
 #endif
-	BUG_ON(msm_rpmrs_levels_init(msm_rpmrs_levels,
-				ARRAY_SIZE(msm_rpmrs_levels)));
+	BUG_ON(msm_rpmrs_levels_init(&msm_rpmrs_data));
 
 	/*
 	* Set low power mode of rpm resources:
