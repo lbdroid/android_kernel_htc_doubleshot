@@ -55,4 +55,8 @@ unsigned long acpuclk_wait_for_irq(void);
 
 void acpuclk_register(struct acpuclk_data *data);
 
+
+/* SoC-specific acpuclock initialization functions. */
+extern struct acpuclk_data acpuclk_8x60_data;
+
 #endif
