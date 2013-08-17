@@ -28,7 +28,7 @@
 #include <linux/miscdevice.h>
 #include <linux/lightsensor.h>
 #include <linux/slab.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/mach-types.h>
 #include <linux/cm3628.h>
 #include <linux/pl_sensor.h>
@@ -36,17 +36,10 @@
 #include <asm/setup.h>
 #include <linux/wakelock.h>
 #include <linux/jiffies.h>
-#include <linux/notifier.h>
-#include <linux/suspend.h>
-#include "../../../arch/arm/mach-tegra/board.h"
+#include <mach/board.h>
 
 
-
-#define debug_flag 0
 #define D(x...) pr_info(x)
-#define DIF(x...) { \
-	if (debug_flag) \
-		printk(KERN_DEBUG "" x); }
 
 #define I2C_RETRY_COUNT 10
 
@@ -56,10 +49,10 @@
 #define NEAR_DELAY_TIME ((100 * HZ) / 1000)
 
 #ifdef POLLING_PROXIMITY
-#define POLLING_DELAY		1000
+#define POLLING_DELAY		200
 #define TH_ADD			3
 #endif
-static int record_init_fail;
+static int record_init_fail = 0;
 static void sensor_irq_do_work(struct work_struct *work);
 static DECLARE_WORK(sensor_irq_work, sensor_irq_do_work);
 
@@ -70,13 +63,6 @@ static DECLARE_DELAYED_WORK(polling_work, polling_do_work);
 
 static void report_near_do_work(struct work_struct *w);
 static DECLARE_DELAYED_WORK(report_near_work, report_near_do_work);
-
-//static void report_debounce_do_work(struct work_struct *w);
-//static DECLARE_DELAYED_WORK(report_debounce_work, report_debounce_do_work);
-struct ps_debounce_struct {
-    int status_val;
-    struct delayed_work report_debounce_work;
-};
 
 struct cm3628_info {
 	struct class *cm3628_class;
@@ -89,7 +75,6 @@ struct cm3628_info {
 	struct early_suspend early_suspend;
 	struct i2c_client *i2c_client;
 	struct workqueue_struct *lp_wq;
-	struct ps_debounce_struct ps_debounce_work;
 
 	int intr_pin;
 
@@ -149,14 +134,13 @@ static uint8_t ps_cancel_set;
 static uint8_t ps_offset_adc;
 static uint8_t ps_offset_adc2;
 struct cm3628_info *lp_info;
-int enable_log;
-static struct mutex als_enable_mutex, als_disable_mutex, als_flag_mutex,  
-					als_get_adc_mutex, ps_report_input_mutex;
+int enable_log = 0;
+int fLevel=-1;
+static struct mutex als_enable_mutex, als_disable_mutex, als_get_adc_mutex;
 static int lightsensor_enable(struct cm3628_info *lpi);
 static int lightsensor_disable(struct cm3628_info *lpi);
 static int initial_cm3628(struct cm3628_info *lpi);
 static void psensor_initial_cmd(struct cm3628_info *lpi);
-
 
 static int I2C_RxData(uint16_t slaveAddr, uint8_t *rxData, int length)
 {
@@ -186,7 +170,7 @@ static int I2C_RxData(uint16_t slaveAddr, uint8_t *rxData, int length)
 
 		val = gpio_get_value(lpi->intr_pin);
 		/*check intr GPIO when i2c error*/
-		if (loop_i == 0 || loop_i == I2C_RETRY_COUNT - 1)
+		if (loop_i == 0 || loop_i == I2C_RETRY_COUNT -1)
 			D("[PS][CM3628 error] %s, i2c err, slaveAddr 0x%x ISR gpio %d  = %d, record_init_fail %d \n",
 				__func__, slaveAddr, lpi->intr_pin, val, record_init_fail);
 
@@ -221,7 +205,7 @@ static int I2C_TxData(uint16_t slaveAddr, uint8_t *txData, int length)
 
 		val = gpio_get_value(lpi->intr_pin);
 		/*check intr GPIO when i2c error*/
-		if (loop_i == 0 || loop_i == I2C_RETRY_COUNT - 1)
+		if (loop_i == 0 || loop_i == I2C_RETRY_COUNT -1)
 			D("[PS][CM3628 error] %s, i2c err, slaveAddr 0x%x, register 0x%x, value 0x%x, ISR gpio%d  = %d, record_init_fail %d\n",
 				__func__, slaveAddr, txData[0], txData[1], lpi->intr_pin, val, record_init_fail);
 
@@ -335,7 +319,7 @@ static int get_ls_adc_value(uint16_t *als_step, bool resume)
 	*als_step <<= 8;
 	*als_step |= (uint16_t)lsb;
 
-	DIF("[LS][CM3628] %s: raw adc = 0x%X, ls_calibrate = %d\n",
+	D("[LS][CM3628] %s: raw adc = 0x%X, ls_calibrate = %d\n",
 		__func__, *als_step, lpi->ls_calibrate);
 
 
@@ -404,35 +388,7 @@ static void report_near_do_work(struct work_struct *w)
 	input_report_abs(lpi->ps_input_dev, ABS_DISTANCE, 0);
 	input_sync(lpi->ps_input_dev);
 	blocking_notifier_call_chain(&psensor_notifier_list, 2, NULL);
-	wake_lock_timeout(&(lpi->ps_wake_lock), 2*HZ);
 }
-
-static int laststatus = 1;
-static unsigned long last_jiffies;
-static unsigned long period_jiffies = 0.35 * HZ;
-static void report_p_input(int nowstatus)
-{
-	struct cm3628_info *lpi = lp_info;
-	mutex_lock(&ps_report_input_mutex);
-	
-	if(laststatus != nowstatus) {
-		D("[PS][cm3628]  %s: report proximity status : %s\n", __func__, nowstatus ? "FAR" : "NEAR");
-		input_report_abs(lpi->ps_input_dev, ABS_DISTANCE, nowstatus);
-		input_sync(lpi->ps_input_dev);
-		blocking_notifier_call_chain(&psensor_notifier_list, nowstatus+2, NULL);
-	}
-
-	laststatus = nowstatus;
-	mutex_unlock(&ps_report_input_mutex);
-}
-
-static void report_debounce_do_work(struct work_struct *w)
-{
-	struct ps_debounce_struct *ps_debounce = container_of(w, struct ps_debounce_struct, report_debounce_work.work);
-	int nowstatus = ps_debounce->status_val;
-	report_p_input(nowstatus);
-}
-
 static void report_psensor_input_event(struct cm3628_info *lpi, int interrupt_flag)
 {
 	uint8_t ps_data;
@@ -442,6 +398,13 @@ static void report_psensor_input_event(struct cm3628_info *lpi, int interrupt_fl
 	/*P-sensor disable but interrupt occur. It might init fail when power on.workaround: reinit*/
 		D("[PS][CM3628] proximity err, ps_enable %d, but intrrupt occur, record_init_fail %d, interrupt_flag %d\n",
 			lpi->ps_enable, record_init_fail, interrupt_flag);
+/*
+		 _cm3628_I2C_Write_Byte(lpi->PS_slave_address,
+		PS_cmd_cmd, 0x00);
+		psensor_initial_cmd(lpi);
+		_cm3628_I2C_Write_Byte(lpi->PS_slave_address,
+			PS_cmd_cmd,
+			lpi->ps_conf1_val |CM3628_PS_SD);*/
 		return;
 	}
 	if (lpi->ps_debounce == 1 &&
@@ -472,28 +435,19 @@ static void report_psensor_input_event(struct cm3628_info *lpi, int interrupt_fl
 			input_sync(lpi->ps_input_dev);
 		}
 	}
-
-	D("[PS][CM3628] proximity ps_data=%d\n", ps_data);
-
+	D("[PS][CM3628] proximity %s, ps_data=%d\n", val ? "FAR" : "NEAR", ps_data);
 	if ((lpi->enable_polling_ignore == 1) && (val == 0) &&
 		(lpi->mfg_mode != NO_IGNORE_BOOT_MODE) &&
-		(time_before(lpi->j_end, (lpi->j_start + NEAR_DELAY_TIME)))) {
+	    (time_before(lpi->j_end, (lpi->j_start + NEAR_DELAY_TIME)))) {
 		D("[PS][CM3628] Ignore NEAR event\n");
 		lpi->ps_pocket_mode = 1;
 	} else {
 		/* 0 is close, 1 is far */
-		if(laststatus == 0) {
-			if(time_before_eq(jiffies, last_jiffies+period_jiffies)) {
-				cancel_delayed_work(&(lpi->ps_debounce_work.report_debounce_work));
-				D("[PS][cm3628] remove debounce.\n");
-			}
-			lpi->ps_debounce_work.status_val = val;
-			queue_delayed_work(lpi->lp_wq, &(lpi->ps_debounce_work.report_debounce_work), period_jiffies);
-			last_jiffies = jiffies;
-		}else {
-			report_p_input(val);
-		}
+		input_report_abs(lpi->ps_input_dev, ABS_DISTANCE, val);
+		input_sync(lpi->ps_input_dev);
+		blocking_notifier_call_chain(&psensor_notifier_list, val+2, NULL);
 	}
+
 }
 
 static void enable_als_int(void)/*enable als interrupt*/
@@ -516,52 +470,35 @@ static void enable_als_int(void)/*enable als interrupt*/
 static void report_lsensor_input_event(struct cm3628_info *lpi, bool resume)
 {/*when resume need report a data, so the paramerter need to quick reponse*/
 	uint16_t adc_value = 0;
-	int level = 0, i, ret = 0;
+	int level = 0, ret = 0, cali_value;
 
 	mutex_lock(&als_get_adc_mutex);
 
 	ret = get_ls_adc_value(&adc_value, resume);
 	if (resume)
-		adc_value = adc_value*8;/*because the CM3628_ALS_IT for 400ms - >50ms*/
+		adc_value = adc_value<<3;/*because the CM3628_ALS_IT for 400ms - >50ms*/
+	cali_value = lpi->ls_calibrate ? adc_value * lpi->als_kadc / lpi->als_gadc : adc_value;
+	cali_value >>= 2;/*adjust value to better match real Lux value*/
 
-	for (i = 0; i < 10; i++) {
-		if (adc_value <= (*(lpi->adc_table + i))) {
-			level = i;
-			if (*(lpi->adc_table + i))
-				break;
-		}
-		if (i == 9) {/*avoid  i = 10, because 'cali_table' of size is 10 */
-			level = i;
-			break;
-		}
-	}
-	ret = set_lsensor_range(((i == 0) || (adc_value == 0)) ? 0 :
-			*(lpi->cali_table + (i - 1)) + 1,
-		*(lpi->cali_table + i));
+	ret = set_lsensor_range(adc_value * 10 / 12, adc_value * 12 / 10);/*trigger IRQ on +/- 20% light level change*/
 
 	if (ret < 0)
 		printk(KERN_ERR "[LS][CM3628 error] %s fail\n", __func__);
 
-	if ((i == 0) || (adc_value == 0))
-		D("[LS][CM3628] %s: ADC=0x%03X, Level=%d, l_thd equal 0, h_thd = 0x%x \n",
-			__func__, adc_value, level, *(lpi->cali_table + i));
-	else
-		D("[LS][CM3628] %s: ADC=0x%03X, Level=%d, l_thd = 0x%x, h_thd = 0x%x \n",
-			__func__, adc_value, level, *(lpi->cali_table + (i - 1)) + 1, *(lpi->cali_table + i));
-
-	lpi->current_level = level;
+	D("[LS][CM3628] %s: ADC=0x%03X, Level=%d, l_thd = 0x%x, h_thd = 0x%x \n",
+			__func__, adc_value, cali_value, adc_value * 10 / 12, adc_value * 12 / 10);
+	lpi->current_level = cali_value;
 	lpi->current_adc = adc_value;
 	/*D("[CM3628] %s: *(lpi->cali_table + (i - 1)) + 1 = 0x%X, *(lpi->cali_table + i) = 0x%x \n", __func__, *(lpi->cali_table + (i - 1)) + 1, *(lpi->cali_table + i));*/
-	input_report_abs(lpi->ls_input_dev, ABS_MISC, level);
-	input_sync(lpi->ls_input_dev);
-
-	mutex_lock(&als_flag_mutex);
-	if (lpi->als_enable == 0)
-		D("[PS][cm3629] l-sensor disable but intrrupt occur. ");
-	else
-		enable_als_int();
-	mutex_unlock(&als_flag_mutex);
-
+	if(fLevel>=0){
+		D("[LS][CM3628] L-sensor force level enable level=%d fLevel=%d\n",level,fLevel);
+		level=fLevel;
+	}
+	if ((!resume) || (cali_value == 0)) {
+		input_report_abs(lpi->ls_input_dev, ABS_MISC, cali_value);
+		input_sync(lpi->ls_input_dev);
+	}
+	enable_als_int();
 	mutex_unlock(&als_get_adc_mutex);
 
 }
@@ -592,23 +529,20 @@ void disable_ps_int(void)/*disable ps interrupt*/
 		PS_cmd_cmd,  lpi->ps_conf1_val);
 }
 
+
 static void sensor_irq_do_work(struct work_struct *work)
 {
 	struct cm3628_info *lpi = lp_info;
 
-	int retry;
 	uint8_t add = 0;
 
 	wake_lock_timeout(&(lpi->ps_wake_lock), 3*HZ);
-
-	// add delay to prevent tegra_i2c errors, increase if needed
-	msleep(2);
-
 	/*check ALS or PS*/
 	_cm3628_I2C_Read_Byte(lpi->check_interrupt_add, &add);
-
+	/*D("[PS][CM3628] %s: check_interrupt_add = 0x%03X, add = 0x%x , add>>1 = 0x%x\n",
+		__func__, lpi->check_interrupt_add, add, add>>1);*/
 	add = add>>1;
-	if (add == lpi->ALS_slave_address) {
+	if (add == lpi->ALS_slave_address ) {
 		report_lsensor_input_event(lpi, 0);
 	} else if (add == lpi->PS_slave_address) {
 		report_psensor_input_event(lpi, 1);
@@ -617,8 +551,6 @@ static void sensor_irq_do_work(struct work_struct *work)
 		__func__, add);
 
 	enable_irq(lpi->irq);
-	if(!(add == lpi->PS_slave_address))
-		wake_unlock(&(lpi->ps_wake_lock));
 }
 
 #ifdef POLLING_PROXIMITY
@@ -746,6 +678,16 @@ static irqreturn_t cm3628_irq_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+static int als_power(int enable)
+{
+	struct cm3628_info *lpi = lp_info;
+
+	if (lpi->power)
+		lpi->power(LS_PWR_ON, 1);
+
+	return 0;
+}
+
 static void ls_initial_cmd(struct cm3628_info *lpi)
 {
 	char cmd = 0;
@@ -805,10 +747,6 @@ static int psensor_enable(struct cm3628_info *lpi)
 
 	psensor_initial_cmd(lpi);
 
-	/*p-sensor first jiffies setting*/
-	last_jiffies = jiffies;
-	laststatus = 1;
-
 	if (lpi->enable_polling_ignore == 1 &&
 		lpi->mfg_mode != NO_IGNORE_BOOT_MODE) {
 		/* default report FAR */
@@ -818,7 +756,7 @@ static int psensor_enable(struct cm3628_info *lpi)
 	} else
 		report_psensor_input_event(lpi, 0);
 
-	cmd = (lpi->ps_conf1_val | CM3628_PS_INT_EN);
+	cmd = ( lpi->ps_conf1_val | CM3628_PS_INT_EN);
 	enable_ps_int(cmd);
 
 	ret = irq_set_irq_wake(lpi->irq, 1);
@@ -879,10 +817,11 @@ static int psensor_disable(struct cm3628_info *lpi)
 		return ret;
 	}
 	while (1) {
-		ret = psensor_set_disable(lpi);
+		ret = psensor_set_disable (lpi);
 		retry_count++;
-		if (ret >= 0 || retry_count == 3)
+		if (ret >= 0 || retry_count == 3) {
 			break;
+		}
 	}
 	if (ret < 0) {
 		pr_err("[PS][CM3628 error]%s: retry disable psensor fail\n", __func__);
@@ -1043,6 +982,7 @@ static int lightsensor_enable(struct cm3628_info *lpi)
 {
 	int ret = 0;
 	uint8_t cmd = 0;
+	uint16_t bogus = 0;
 
 	mutex_lock(&als_enable_mutex);
 	D("[LS][CM3628] %s\n", __func__);
@@ -1059,13 +999,10 @@ static int lightsensor_enable(struct cm3628_info *lpi)
 		/* report an invalid value first to ensure we
 		* trigger an event when adc_level is zero.
 		*/
-		mutex_lock(&als_flag_mutex);
-		lpi->als_enable = 1;
-		mutex_unlock(&als_flag_mutex);
 		input_report_abs(lpi->ls_input_dev, ABS_MISC, -1);
 		input_sync(lpi->ls_input_dev);
-		report_lsensor_input_event(lpi, 1);
-		/*resume, IOCTL and DEVICE_ATTR*/
+		get_ls_adc_value(&bogus, 1);/*ignore first ADC value*/
+		report_lsensor_input_event(lpi, 1);/*resume, IOCTL and DEVICE_ATTR*/
 	}
 
 	mutex_unlock(&als_enable_mutex);
@@ -1077,7 +1014,7 @@ static int lightsensor_disable(struct cm3628_info *lpi)
 	int ret = 0;
 	char cmd = 0;
 
-	mutex_lock(&als_flag_mutex);
+	mutex_lock(&als_disable_mutex);
 
 	D("[LS][CM3628] %s\n", __func__);
 
@@ -1086,11 +1023,10 @@ static int lightsensor_disable(struct cm3628_info *lpi)
 	if (ret < 0)
 		pr_err("[LS][CM3628 error]%s: disable auto light sensor fail\n",
 			__func__);
-	else {
+	else
 		lpi->als_enable = 0;
-	}
 
-	mutex_unlock(&als_flag_mutex);
+	mutex_unlock(&als_disable_mutex);
 	return ret;
 }
 
@@ -1179,16 +1115,16 @@ static ssize_t ps_adc_show(struct device *dev,
 	if (lpi->ps_calibration_rule == 1) {
 		D("[PS][CM3628] %s: ps ADC value=0x%x, adc offset 0x%x\n",
 			__func__, value, lpi->ps_adc_offset);
-		if (value >= lpi->ps_adc_offset)
-			value = value - lpi->ps_adc_offset;
+		if (value >= lpi->ps_adc_offset )
+			value = value -lpi->ps_adc_offset;
 		else
 			value = 0;
 	} else if (lpi->ps_calibration_rule == 2 && lpi->ps_adc_offset > 0) {/*for saga*/
 		D("[PS][CM3628] %s: ps ADC value=0x%x, adc offset 0x%x, adc offset2 0x%x,\n",
 			__func__, value, lpi->ps_adc_offset,  lpi->ps_adc_offset2);
-		if (value < 20) {
-			if (value >= lpi->ps_adc_offset)
-				value = value - lpi->ps_adc_offset;
+		if (value < 20 ) {
+			if (value >= lpi->ps_adc_offset )
+				value = value -lpi->ps_adc_offset;
 			else
 				value = 0;
 		} else
@@ -1312,7 +1248,7 @@ static ssize_t ps_kadc_store(struct device *dev,
 			__func__, lpi->ps_thd_set);
 	}
 	if (lpi->ps_enable)
-		enable_ps_int(lpi->ps_conf1_val | CM3628_PS_INT_EN);
+		enable_ps_int(lpi->ps_conf1_val |CM3628_PS_INT_EN);
 
 	lpi->inte_cancel_set = (param2 & 0xFF);
 	ps_cancel_set = lpi->inte_cancel_set;
@@ -1359,7 +1295,7 @@ static ssize_t ps_conf2_store(struct device *dev,
 
 static DEVICE_ATTR(ps_conf2, 0664, ps_conf2_show, ps_conf2_store);
 
-static uint8_t PS_CONF1;
+static uint8_t PS_CONF1 = 0;
 static ssize_t ps_conf1_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
@@ -1386,7 +1322,7 @@ static ssize_t ps_conf1_store(struct device *dev,
 }
 static DEVICE_ATTR(ps_conf1, 0664, ps_conf1_show, ps_conf1_store);
 
-static uint8_t PS_THD;
+static uint8_t PS_THD = 0;
 static ssize_t ps_thd_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
@@ -1604,10 +1540,6 @@ static ssize_t ls_kadc_store(struct device *dev,
 	if (lightsensor_update_table(lpi) < 0)
 		printk(KERN_ERR "[LS][CM3628 error] %s: update ls table fail\n", __func__);
 	mutex_unlock(&als_get_adc_mutex);
-
-	//lightsensor_disable(lpi);
-	//lightsensor_enable(lpi);
-
 	return count;
 }
 
@@ -1670,7 +1602,7 @@ static ssize_t ls_adc_table_store(struct device *dev,
 static DEVICE_ATTR(ls_adc_table, 0664,
 	ls_adc_table_show, ls_adc_table_store);
 
-static uint8_t ALS_CONF1;
+static uint8_t ALS_CONF1 = 0;
 static ssize_t ls_conf1_show(struct device *dev,
 				  struct device_attribute *attr, char *buf)
 {
@@ -1691,7 +1623,7 @@ static ssize_t ls_conf1_store(struct device *dev,
 }
 static DEVICE_ATTR(ls_conf1, 0664, ls_conf1_show, ls_conf1_store);
 
-static uint8_t ALS_CONF2;
+static uint8_t ALS_CONF2 = 0;
 static ssize_t ls_conf2_show(struct device *dev,
 				  struct device_attribute *attr, char *buf)
 {
@@ -1712,6 +1644,30 @@ static ssize_t ls_conf2_store(struct device *dev,
 }
 static DEVICE_ATTR(ls_conf2, 0664, ls_conf2_show, ls_conf2_store);
 
+static ssize_t ls_fLevel_show(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "fLevel = %d\n", fLevel);
+}
+static ssize_t ls_fLevel_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct cm3628_info *lpi = lp_info;
+	int value=0;
+	sscanf(buf, "%d", &value);
+	(value>=0)?(value=min(value,10)):(value=max(value,-1));
+	fLevel=value;
+	input_report_abs(lpi->ls_input_dev, ABS_MISC, fLevel);
+	input_sync(lpi->ls_input_dev);
+	printk(KERN_INFO "[LS]set fLevel = %d\n", fLevel);
+
+	msleep(1000);
+	fLevel=-1;
+	return count;
+}
+static DEVICE_ATTR(ls_flevel, 0664, ls_fLevel_show, ls_fLevel_store);
+
 static int lightsensor_setup(struct cm3628_info *lpi)
 {
 	int ret;
@@ -1725,7 +1681,7 @@ static int lightsensor_setup(struct cm3628_info *lpi)
 	}
 	lpi->ls_input_dev->name = "lightsensor-level";
 	set_bit(EV_ABS, lpi->ls_input_dev->evbit);
-	input_set_abs_params(lpi->ls_input_dev, ABS_MISC, 0, 9, 0, 0);
+	input_set_abs_params(lpi->ls_input_dev, ABS_MISC, 0, 0xffff, 0, 0);
 
 	ret = input_register_device(lpi->ls_input_dev);
 	if (ret < 0) {
@@ -1802,7 +1758,7 @@ static int initial_cm3628(struct cm3628_info *lpi)
 
 check_interrupt_gpio:
 	if (fail_counter > 0) {
-		ret = _cm3628_I2C_Read_Byte(lpi->check_interrupt_add, &add);
+		ret =_cm3628_I2C_Read_Byte(lpi->check_interrupt_add, &add);
 		D("[PS][CM3628] %s, check_interrupt_add value = 0x%x, ret %d\n",
 				__func__, add, ret);
 	}
@@ -1832,7 +1788,7 @@ check_interrupt_gpio:
 	}
 
 	_cm3628_I2C_Write_Byte(lpi->ALS_slave_address,
-		ALS_average, CM3628_ALS_RES | CM3628_ALS_HS);/*0x40 ALS_RES ALS reset enable*/
+		ALS_average, CM3628_ALS_RES);/*0x40 ALS_RES ALS reset enable*/
 	_cm3628_I2C_Write_Byte(lpi->ALS_slave_address, ALS_high_thd_msb, 0x00);/*high Threshold*/
 	_cm3628_I2C_Write_Byte(lpi->ALS_slave_address, ALS_high_thd_lsb, 0x00);
 	_cm3628_I2C_Write_Byte(lpi->ALS_slave_address, ALS_low_thd_msb, 0x00);/*low Threshold*/
@@ -1852,9 +1808,8 @@ static int cm3628_setup(struct cm3628_info *lpi)
 {
 	int ret = 0;
 
-	//als_power(1);
-	//msleep(5);
-
+	als_power(1);
+	msleep(5);
 	ret = gpio_request(lpi->intr_pin, "gpio_cm3628_intr");
 	if (ret < 0) {
 		pr_err("[PS][CM3628 error]%s: gpio %d request failed (%d)\n",
@@ -1869,7 +1824,7 @@ static int cm3628_setup(struct cm3628_info *lpi)
 			__func__, lpi->intr_pin, ret);
 		goto fail_free_intr_pin;
 	}
-	tegra_gpio_enable(lpi->intr_pin);
+
 
 	ret = initial_cm3628(lpi);
 	if (ret < 0) {
@@ -1882,7 +1837,7 @@ static int cm3628_setup(struct cm3628_info *lpi)
 	psensor_initial_cmd(lpi);
 	_cm3628_I2C_Write_Byte(lpi->PS_slave_address,
 		PS_cmd_cmd,
-		lpi->ps_conf1_val | CM3628_PS_SD);
+		lpi->ps_conf1_val |CM3628_PS_SD);
 	/*Default disable P sensor*/
 
 	lpi->led = 0;
@@ -1955,8 +1910,7 @@ static int cm3628_probe(struct i2c_client *client,
 
 	lpi->irq = client->irq;
 
-	/* lpi->mfg_mode = board_mfg_mode(); */
-	lpi->mfg_mode = 0;
+	lpi->mfg_mode = board_mfg_mode();
 
 	i2c_set_clientdata(client, lpi);
 	lpi->intr_pin = pdata->intr;
@@ -1986,16 +1940,15 @@ static int cm3628_probe(struct i2c_client *client,
 	lpi->ps_reset_thd = pdata->ps_reset_thd;
 	D("[PS][CM3628] %s: is_cmd 0x%x, ps_adc_offset=0x%x, ps_debounce=0x%x\n",
 		__func__, lpi->is_cmd, lpi->ps_adc_offset, lpi->ps_debounce);
-	if (pdata->is_cmd == 0)
+	if (pdata->is_cmd == 0) {
 		lpi->is_cmd  = CM3628_ALS_IT_400ms | CM3628_ALS_PERS_4;
+	}
 
 	lp_info = lpi;
 
 	mutex_init(&als_enable_mutex);
 	mutex_init(&als_disable_mutex);
-	mutex_init(&als_flag_mutex);
 	mutex_init(&als_get_adc_mutex);
-	mutex_init(&ps_report_input_mutex);
 
 	ret = lightsensor_setup(lpi);
 	if (ret < 0) {
@@ -2025,7 +1978,6 @@ static int cm3628_probe(struct i2c_client *client,
 		ret = -ENOMEM;
 		goto err_create_singlethread_workqueue;
 	}
-	INIT_DELAYED_WORK(&(lpi->ps_debounce_work.report_debounce_work), report_debounce_do_work);
 
 	wake_lock_init(&(lpi->ps_wake_lock), WAKE_LOCK_SUSPEND, "proximity");
 
@@ -2082,6 +2034,10 @@ static int cm3628_probe(struct i2c_client *client,
 		goto err_create_ls_device_file;
 
 	ret = device_create_file(lpi->ls_dev, &dev_attr_ls_conf2);
+	if (ret)
+		goto err_create_ls_device_file;
+
+	ret = device_create_file(lpi->ls_dev, &dev_attr_ls_flevel);
 	if (ret)
 		goto err_create_ls_device_file;
 
@@ -2154,9 +2110,7 @@ err_cm3628_setup:
 	wake_lock_destroy(&(lpi->ps_wake_lock));
 	mutex_destroy(&als_enable_mutex);
 	mutex_destroy(&als_disable_mutex);
-	mutex_destroy(&als_flag_mutex);
 	mutex_destroy(&als_get_adc_mutex);
-	mutex_destroy(&ps_report_input_mutex);
 	input_unregister_device(lpi->ls_input_dev);
 	input_free_device(lpi->ls_input_dev);
 	input_unregister_device(lpi->ps_input_dev);
