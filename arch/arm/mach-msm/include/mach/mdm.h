@@ -35,6 +35,17 @@ struct charm_platform_data {
 	unsigned gpio_mdm2ap_vfr;
 };
 
+#define AP2MDM_STATUS   136
+#define MDM2AP_STATUS   134
+#define MDM2AP_WAKEUP   40
+#define MDM2AP_ERRFATAL 133
+#define AP2MDM_ERRFATAL 93
+
+#define AP2MDM_PMIC_RESET_N     131
+#define AP2MDM_KPDPWR_N 132
+#define AP2PMIC_TMPNI_CKEN      141
+#define AP2MDM_WAKEUP	135
+
 /* Added by HTC */
 unsigned charm_get_MDM_error_flag(void);
 void charm_panic_notify(void);
