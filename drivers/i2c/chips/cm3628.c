@@ -596,7 +596,7 @@ static void sensor_irq_do_work(struct work_struct *work)
 {
 	struct cm3628_info *lpi = lp_info;
 
-	//int retry;
+	int retry;
 	uint8_t add = 0;
 
 	wake_lock_timeout(&(lpi->ps_wake_lock), 3*HZ);
