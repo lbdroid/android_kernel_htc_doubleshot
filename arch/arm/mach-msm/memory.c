@@ -37,6 +37,7 @@
 #include <mach/msm_iomap.h>
 #include <mach/socinfo.h>
 #include <../../mm/mm.h>
+#include <linux/fmem.h>
 
 #if defined(CONFIG_ARCH_MSM7X30)
 unsigned int ebi0_size = 0x20000000;
@@ -87,67 +88,32 @@ void write_to_strongly_ordered_memory(void)
 }
 EXPORT_SYMBOL(write_to_strongly_ordered_memory);
 
-void flush_axi_bus_buffer(void)
-{
-#if defined(CONFIG_ARCH_MSM7X27) && !defined(CONFIG_ARCH_MSM7X27A)
-	__asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 5" \
-				    : : "r" (0) : "memory");
-	write_to_strongly_ordered_memory();
-#endif
-}
-
-#define CACHE_LINE_SIZE 32
-
-/* These cache related routines make the assumption that the associated
- * physical memory is contiguous. They will operate on all (L1
- * and L2 if present) caches.
+/* These cache related routines make the assumption (if outer cache is
+ * available) that the associated physical memory is contiguous.
+ * They will operate on all (L1 and L2 if present) caches.
  */
 void clean_and_invalidate_caches(unsigned long vstart,
 	unsigned long length, unsigned long pstart)
 {
-	unsigned long vaddr;
-
-	for (vaddr = vstart; vaddr < vstart + length; vaddr += CACHE_LINE_SIZE)
-		asm ("mcr p15, 0, %0, c7, c14, 1" : : "r" (vaddr));
-#ifdef CONFIG_OUTER_CACHE
+	dmac_flush_range((void *)vstart, (void *) (vstart + length));
 	outer_flush_range(pstart, pstart + length);
-#endif
-	asm ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0));
-	asm ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));
 
-	flush_axi_bus_buffer();
 }
 
 void clean_caches(unsigned long vstart,
 	unsigned long length, unsigned long pstart)
 {
-	unsigned long vaddr;
-
-	for (vaddr = vstart; vaddr < vstart + length; vaddr += CACHE_LINE_SIZE)
-		asm ("mcr p15, 0, %0, c7, c10, 1" : : "r" (vaddr));
-#ifdef CONFIG_OUTER_CACHE
+	dmac_clean_range((void *)vstart, (void *) (vstart + length));
 	outer_clean_range(pstart, pstart + length);
-#endif
-	asm ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0));
-	asm ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));
 
-	flush_axi_bus_buffer();
 }
 
 void invalidate_caches(unsigned long vstart,
 	unsigned long length, unsigned long pstart)
 {
-	unsigned long vaddr;
-
-	for (vaddr = vstart; vaddr < vstart + length; vaddr += CACHE_LINE_SIZE)
-		asm ("mcr p15, 0, %0, c7, c6, 1" : : "r" (vaddr));
-#ifdef CONFIG_OUTER_CACHE
+	dmac_inv_range((void *)vstart, (void *) (vstart + length));
 	outer_inv_range(pstart, pstart + length);
-#endif
-	asm ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0));
-	asm ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));
 
-	flush_axi_bus_buffer();
 }
 
 void *alloc_bootmem_aligned(unsigned long size, unsigned long alignment)
@@ -425,4 +391,14 @@ void store_ttbr0(void)
 	/* Store TTBR0 for post-mortem debugging purposes. */
 	asm("mrc p15, 0, %0, c2, c0, 0\n"
 		: "=r" (msm_ttbr0));
+}
+
+int request_fmem_c_region(void *unused)
+{
+	return fmem_set_state(FMEM_C_STATE);
+}
+
+int release_fmem_c_region(void *unused)
+{
+	return fmem_set_state(FMEM_T_STATE);
 }

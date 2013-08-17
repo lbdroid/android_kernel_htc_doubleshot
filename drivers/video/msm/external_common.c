@@ -388,23 +388,11 @@ static ssize_t external_common_rda_connected(struct device *dev,
 	return ret;
 }
 
-static ssize_t external_common_rda_hdmi_mode(struct device *dev,
-  struct device_attribute *attr, char *buf)
-{
-    ssize_t ret;
-    ret = snprintf(buf, PAGE_SIZE, "%d\n",
-        external_common_state->hdmi_sink);
-    DEV_DBG("%s: '%d'\n", __func__,
-        external_common_state->hdmi_sink);
-    return ret;
-}
-
 static DEVICE_ATTR(video_mode, 644,
 	external_common_rda_video_mode, external_common_wta_video_mode);
 static DEVICE_ATTR(video_mode_str, S_IRUGO, external_common_rda_video_mode_str,
 	NULL);
 static DEVICE_ATTR(connected, 0644, external_common_rda_connected, NULL);
-static DEVICE_ATTR(hdmi_mode, S_IRUGO, external_common_rda_hdmi_mode, NULL);
 #ifdef CONFIG_FB_MSM_HDMI_COMMON
 static DEVICE_ATTR(edid_modes, S_IRUGO, hdmi_common_rda_edid_modes, NULL);
 static DEVICE_ATTR(hpd, 0644, hdmi_common_rda_hpd,
@@ -421,7 +409,6 @@ static struct attribute *external_common_fs_attrs[] = {
 	&dev_attr_video_mode.attr,
 	&dev_attr_video_mode_str.attr,
 	&dev_attr_connected.attr,
-	&dev_attr_hdmi_mode.attr,
 #ifdef CONFIG_FB_MSM_HDMI_COMMON
 	&dev_attr_edid_modes.attr,
 	&dev_attr_hdcp.attr,
@@ -696,7 +683,17 @@ static uint32 hdmi_edid_extract_ieee_reg_id(const uint8 *in_buf)
 		((uint32)vsd[6] << 8) + (uint32)vsd[5], (uint32)vsd[7] * 5);
 	return ((uint32)vsd[3] << 16) + ((uint32)vsd[2] << 8) + (uint32)vsd[1];
 }
-
+/*Video Capability Data Block*/
+static void hdmi_edid_extract_vcdb(const uint8 *in_buf)
+{
+	uint8 len;
+	const uint8 *vcdb = hdmi_edid_find_block(in_buf, 7, &len);
+	if(vcdb == NULL)
+		external_common_state->vcdb_support = false;
+	else
+		external_common_state->vcdb_support = true;
+	return;
+}
 static void hdmi_edid_extract_3d_present(const uint8 *in_buf)
 {
 	uint8 len, offset;
@@ -1072,6 +1069,7 @@ int hdmi_common_read_edid(void)
 				edid_buf+0x80);
 			hdmi_edid_extract_audio_data_blocks(edid_buf+0x80);
 			hdmi_edid_extract_3d_present(edid_buf+0x80);
+			hdmi_edid_extract_vcdb(edid_buf+0x80);
 		}
 		break;
 	case 2:

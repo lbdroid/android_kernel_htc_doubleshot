@@ -43,11 +43,9 @@
 
 #include <linux/kthread.h>
 #include <linux/freezer.h>
-#ifdef CONFIG_EXT4_E2FSCK_RECOVER
-#include <linux/reboot.h>
-#endif
 
 #include "ext4.h"
+#include "ext4_extents.h"
 #include "ext4_jbd2.h"
 #include "xattr.h"
 #include "acl.h"
@@ -85,10 +83,6 @@ static int ext4_feature_set_ok(struct super_block *sb, int readonly);
 static void ext4_destroy_lazyinit_thread(void);
 static void ext4_unregister_li_request(struct super_block *sb);
 static void ext4_clear_request_list(void);
-
-#ifdef CONFIG_EXT4_E2FSCK_RECOVER
-int ext4_debug_level = 0;
-#endif
 
 #if !defined(CONFIG_EXT2_FS) && !defined(CONFIG_EXT2_FS_MODULE) && defined(CONFIG_EXT4_USE_FOR_EXT23)
 static struct file_system_type ext2_fs_type = {
@@ -426,11 +420,6 @@ static void ext4_handle_error(struct super_block *sb)
 	if (test_opt(sb, ERRORS_PANIC))
 		panic("EXT4-fs (device %s): panic forced after error\n",
 			sb->s_id);
-
-#ifdef CONFIG_EXT4_E2FSCK_RECOVER
-	if (!ext4_debug_level && test_opt(sb, ERRORS_RO))
-		ext4_e2fsck(sb);
-#endif
 }
 
 void __ext4_error(struct super_block *sb, const char *function,
@@ -449,42 +438,6 @@ void __ext4_error(struct super_block *sb, const char *function,
 
 	ext4_handle_error(sb);
 }
-
-#ifdef CONFIG_EXT4_E2FSCK_RECOVER
-static void ext4_reboot(struct work_struct *work)
-{
-	printk(KERN_ERR "%s: reboot to run e2fsck\n", __func__);
-	kernel_restart("oem-22");
-}
-
-void ext4_e2fsck(struct super_block *sb)
-{
-	static int reboot;
-	struct workqueue_struct *wq;
-	struct ext4_sb_info *sb_info;
-	if (reboot)
-		return;
-	printk(KERN_ERR "%s\n", __func__);
-	reboot = 1;
-	sb_info = EXT4_SB(sb);
-	if (!sb_info) {
-		printk(KERN_ERR "%s: no sb_info\n", __func__);
-		reboot = 0;
-		return;
-	}
-	sb_info->recover_wq = create_workqueue("ext4-recover");
-	if (!sb_info->recover_wq) {
-		printk(KERN_ERR "EXT4-fs: failed to create recover workqueue\n");
-		reboot = 0;
-		return;
-	}
-
-	INIT_WORK(&sb_info->reboot_work, ext4_reboot);
-	wq = sb_info->recover_wq;
-	/* queue the work to reboot */
-	queue_work(wq, &sb_info->reboot_work);
-}
-#endif
 
 void ext4_error_inode(struct inode *inode, const char *function,
 		      unsigned int line, ext4_fsblk_t block,
@@ -1688,7 +1641,9 @@ static int parse_options(char *options, struct super_block *sb,
 			data_opt = EXT4_MOUNT_WRITEBACK_DATA;
 		datacheck:
 			if (is_remount) {
-				if (test_opt(sb, DATA_FLAGS) != data_opt) {
+				if (!sbi->s_journal)
+					ext4_msg(sb, KERN_WARNING, "Remounting file system with no journal so ignoring journalled data option");
+				else if (test_opt(sb, DATA_FLAGS) != data_opt) {
 					ext4_msg(sb, KERN_ERR,
 						"Cannot change data mode on remount");
 					return 0;
@@ -2040,8 +1995,8 @@ static int ext4_fill_flex_info(struct super_block *sb)
 		flex_group = ext4_flex_group(sbi, i);
 		atomic_add(ext4_free_inodes_count(sb, gdp),
 			   &sbi->s_flex_groups[flex_group].free_inodes);
-		atomic_add(ext4_free_blks_count(sb, gdp),
-			   &sbi->s_flex_groups[flex_group].free_blocks);
+		atomic64_add(ext4_free_blks_count(sb, gdp),
+			     &sbi->s_flex_groups[flex_group].free_blocks);
 		atomic_add(ext4_used_dirs_count(sb, gdp),
 			   &sbi->s_flex_groups[flex_group].used_dirs);
 	}
@@ -3364,7 +3319,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	sbi->s_inodes_per_block = blocksize / EXT4_INODE_SIZE(sb);
 	if (sbi->s_inodes_per_block == 0)
 		goto cantfind_ext4;
-	sbi->s_itb_per_group = (sbi->s_inodes_per_group + sbi->s_inodes_per_block - 1)/
+	sbi->s_itb_per_group = sbi->s_inodes_per_group /
 					sbi->s_inodes_per_block;
 	sbi->s_desc_per_block = blocksize / EXT4_DESC_SIZE(sb);
 	sbi->s_sbh = bh;

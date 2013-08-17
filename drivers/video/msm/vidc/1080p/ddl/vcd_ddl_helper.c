@@ -10,10 +10,12 @@
  * GNU General Public License for more details.
  *
  */
+#include <linux/ion.h>
 #include <mach/msm_memtypes.h>
 #include "vcd_ddl.h"
 #include "vcd_ddl_shared_mem.h"
 #include "vcd_res_tracker_api.h"
+
 
 struct ddl_context *ddl_get_context(void)
 {
@@ -255,6 +257,15 @@ u32 ddl_decoder_dpb_init(struct ddl_client_context *ddl)
 				memset(frame[i].vcd_frm.virtual + luma_size,
 					 0x80808080,
 					frame[i].vcd_frm.alloc_len - luma_size);
+				if (frame[i].vcd_frm.ion_flag == CACHED) {
+					clean_and_invalidate_caches(
+					(unsigned long)frame[i].
+					vcd_frm.virtual,
+					(unsigned long)frame[i].
+					vcd_frm.alloc_len,
+					(unsigned long)frame[i].
+					vcd_frm.physical);
+				}
 			} else {
 				DDL_MSG_ERROR("luma size error");
 				return VCD_ERR_FAIL;
@@ -364,6 +375,8 @@ void ddl_release_client_internal_buffers(struct ddl_client_context *ddl)
 		struct ddl_encoder_data *encoder =
 			&(ddl->codec_data.encoder);
 		ddl_pmem_free(&encoder->seq_header);
+		ddl_pmem_free(&encoder->batch_frame.slice_batch_in);
+		ddl_pmem_free(&encoder->batch_frame.slice_batch_out);
 		ddl_vidc_encode_dynamic_property(ddl, false);
 		encoder->dynamic_prop_change = 0;
 		ddl_free_enc_hw_buffers(ddl);
@@ -434,7 +447,7 @@ struct ddl_client_context *ddl_get_current_ddl_client_for_channel_id(
 		ddl = ddl_context->current_ddl[1];
 	else {
 		DDL_MSG_LOW("STATE-CRITICAL-FRMRUN");
-		DDL_MSG_ERROR("Unexpected channel ID = %d", channel_id);
+		DDL_MSG_LOW("Unexpected channel ID = %d", channel_id);
 		ddl = NULL;
 	}
 	return ddl;
@@ -970,8 +983,7 @@ u32 ddl_check_reconfig(struct ddl_client_context *ddl)
 			(decoder->frame_size.scan_lines ==
 			decoder->client_frame_size.scan_lines) &&
 			(decoder->frame_size.stride ==
-			decoder->client_frame_size.stride) &&
-			decoder->progressive_only)
+			decoder->client_frame_size.stride))
 				need_reconfig = false;
 	}
 	return need_reconfig;
@@ -1019,4 +1031,15 @@ void ddl_fill_dec_desc_buffer(struct ddl_client_context *ddl)
 		memcpy(dec_desc_buf->align_virtual_addr,
 			   ip_bitstream->desc_buf,
 			   ip_bitstream->desc_size);
+}
+
+void ddl_set_vidc_timeout(struct ddl_client_context *ddl)
+{
+	u32 vidc_time_out = 0;
+	if (ddl->codec_data.decoder.idr_only_decoding)
+		vidc_time_out = 2 * DDL_VIDC_1080P_200MHZ_TIMEOUT_VALUE;
+	DDL_MSG_HIGH("%s Video core time out value = 0x%x",
+		 __func__, vidc_time_out);
+	vidc_sm_set_video_core_timeout_value(
+		&ddl->shared_mem[ddl->command_channel], vidc_time_out);
 }

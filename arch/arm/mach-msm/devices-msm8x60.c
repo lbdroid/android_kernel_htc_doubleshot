@@ -1726,9 +1726,6 @@ static struct msm_rotator_platform_data rotator_pdata = {
 	.hardware_version_number = 0x01010307,
 	.rotator_clks = rotator_clocks,
 	.regulator_name = "fs_rot",
-#ifdef CONFIG_MSM_BUS_SCALING
-	.bus_scale_table = &rotator_bus_scale_pdata,
-#endif
 
 };
 
@@ -2458,7 +2455,8 @@ struct msm_vidc_platform_data vidc_platform_data = {
 	.enable_ion = 0,
 #endif
 	.disable_dmx = 0,
-	.disable_fullhd = 0
+	.disable_fullhd = 0,
+	.disable_turbo = 0
 };
 
 struct platform_device msm_device_vidc = {

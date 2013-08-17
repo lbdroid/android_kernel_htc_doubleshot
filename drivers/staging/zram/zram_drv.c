@@ -31,6 +31,9 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/vmalloc.h>
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+#include <linux/swap.h>
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 #include "zram_drv.h"
 
@@ -77,7 +80,6 @@ snappy_decompress_(
 #else
 #error either CONFIG_ZRAM_LZO or CONFIG_ZRAM_SNAPPY must be defined
 #endif
-
 
 /* Globals */
 static int zram_major;
@@ -150,11 +152,8 @@ static int page_zero_filled(void *ptr)
 
 static u64 zram_default_disksize_bytes(void)
 {
-#if 0
 	return ((totalram_pages << PAGE_SHIFT) *
 		default_disksize_perc_ram / 100) & PAGE_MASK;
-#endif
-	return CONFIG_ZRAM_DEFAULT_DISKSIZE;
 }
 
 static void zram_set_disksize(struct zram *zram, u64 size_bytes)
@@ -162,6 +161,22 @@ static void zram_set_disksize(struct zram *zram, u64 size_bytes)
 	zram->disksize = size_bytes;
 	set_capacity(zram->disk, size_bytes >> SECTOR_SHIFT);
 }
+
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+/*
+ * Swap header (1st page of swap device) contains information
+ * about a swap file/partition. Prepare such a header for the
+ * given ramzswap device so that swapon can identify it as a
+ * swap partition.
+ */
+static void setup_swap_header(struct zram *zram, union swap_header *s)
+{
+	s->info.version = 1;
+	s->info.last_page = (zram->disksize >> PAGE_SHIFT) - 1;
+	s->info.nr_badpages = 0;
+	memcpy(s->magic.magic, "SWAPSPACE2", 10);
+}
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 static void zram_free_page(struct zram *zram, size_t index)
 {
@@ -655,7 +670,7 @@ void __zram_reset_device(struct zram *zram)
 	/* Reset stats */
 	memset(&zram->stats, 0, sizeof(zram->stats));
 
-	zram_set_disksize(zram, zram_default_disksize_bytes());
+	zram->disksize = 0;
 }
 
 void zram_reset_device(struct zram *zram)
@@ -669,6 +684,10 @@ int zram_init_device(struct zram *zram)
 {
 	int ret;
 	size_t num_pages;
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+	struct page *page;
+	union swap_header *swap_header;
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 	down_write(&zram->init_lock);
 
@@ -676,6 +695,9 @@ int zram_init_device(struct zram *zram)
 		up_write(&zram->init_lock);
 		return 0;
 	}
+
+	if (!zram->disksize)
+		zram_set_disksize(zram, zram_default_disksize_bytes());
 
 	zram->compress_workmem = kzalloc(WMSIZE, GFP_KERNEL);
 	if (!zram->compress_workmem) {
@@ -699,6 +721,21 @@ int zram_init_device(struct zram *zram)
 		ret = -ENOMEM;
 		goto fail_no_table;
 	}
+
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+	page = alloc_page(__GFP_ZERO);
+	if (!page) {
+		pr_err("Error allocating swap header page\n");
+		ret = -ENOMEM;
+		goto fail;
+	}
+	zram->table[0].page = page;
+	zram_set_flag(zram, 0, ZRAM_UNCOMPRESSED);
+	swap_header = kmap(page);
+	setup_swap_header(zram, swap_header);
+	kunmap(page);
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
+	set_capacity(zram->disk, zram->disksize >> SECTOR_SHIFT);
 
 	/* zram devices sort of resembles non-rotational disks */
 	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, zram->disk->queue);
@@ -757,7 +794,7 @@ static int create_device(struct zram *zram, int device_id)
 		goto out;
 	}
 
-	blk_queue_make_request(zram->queue, (make_request_fn *)zram_make_request);
+	blk_queue_make_request(zram->queue, zram_make_request);
 	zram->queue->queuedata = zram;
 
 	 /* gendisk structure */
@@ -777,12 +814,8 @@ static int create_device(struct zram *zram, int device_id)
 	zram->disk->private_data = zram;
 	snprintf(zram->disk->disk_name, 16, "zram%d", device_id);
 
-	/*
-	 * Set some default disksize. To set another disksize, user
-	 * must reset the device and then write a new disksize to
-	 * corresponding device's sysfs node.
-	 */
-	zram_set_disksize(zram, zram_default_disksize_bytes());
+	/* Actual capacity set using syfs (/sys/block/zram<id>/disksize */
+	zram_set_disksize(zram, 0);
 
 	/*
 	 * To ensure that we always get PAGE_SIZE aligned
@@ -827,16 +860,8 @@ static int __init zram_init(void)
 {
 	int ret, dev_id;
 
-	/*
-	 * Module parameter not specified by user. Use default
-	 * value as defined during kernel config.
-	 */
-	if (zram_num_devices == 0) {
-		zram_num_devices = CONFIG_ZRAM_NUM_DEVICES;
-	}
-
 	if (zram_num_devices > max_num_devices) {
-		pr_warning("Invalid value for num_devices: %u\n",
+		pr_warning("Invalid value for zram_num_devices: %u\n",
 				zram_num_devices);
 		ret = -EINVAL;
 		goto out;
@@ -850,7 +875,7 @@ static int __init zram_init(void)
 	}
 
 	if (!zram_num_devices) {
-		pr_info("num_devices not specified. Using default: 1\n");
+		pr_info("zram_num_devices not specified. Using default: 1\n");
 		zram_num_devices = 1;
 	}
 

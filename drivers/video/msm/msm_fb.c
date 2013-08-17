@@ -129,6 +129,16 @@ static int msm_fb_suspend_sub(struct msm_fb_data_type *mfd);
 static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg);
 static int msm_fb_mmap(struct fb_info *info, struct vm_area_struct *vma);
+#if defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR)
+struct msmfb_usb_projector_info usb_pjt_info;
+static char *fb1_addr_base = 0;
+
+char *get_fb_addr(void)
+{
+	usb_pjt_info.usb_offset = usb_pjt_info.latest_offset;
+	return fb1_addr_base + usb_pjt_info.usb_offset;
+}
+#endif
 
 #ifdef MSM_FB_ENABLE_DBGFS
 
@@ -192,16 +202,6 @@ int msmfb_get_fb_area(void)
     return area;
 }
 
-static void msmfb_set_var(unsigned char *addr, int area)
-{
-    unsigned long flags;
-
-    spin_lock_irqsave(&fb_data_lock, flags);
-    msm_fb_data.fb_addr = addr;
-    msm_fb_data.msmfb_area = area;
-    spin_unlock_irqrestore(&fb_data_lock, flags);
-
-}
 #endif
 
 
@@ -758,12 +758,9 @@ static int msm_fb_suspend_sub(struct msm_fb_data_type *mfd)
 static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 {
 	int ret = 0;
-	struct msm_fb_panel_data *pdata = NULL;
 
 	if ((!mfd) || (mfd->key != MFD_KEY))
 		return 0;
-
-	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
 
 	/* attach display channel irq if there's any */
 	if (mfd->channel_irq != 0)
@@ -779,9 +776,6 @@ static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 				      mfd->op_enable);
 		if (ret)
 			MSM_FB_INFO("msm_fb_resume: can't turn on display!\n");
-	} else {
-		if (pdata->power_ctrl)
-			pdata->power_ctrl(TRUE);
 	}
 
 	return ret;
@@ -1038,14 +1032,41 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 				mfd->panel_power_on = FALSE;
 
 			mfd->op_enable = TRUE;
-		} else {
-			if (pdata->power_ctrl)
-				pdata->power_ctrl(FALSE);
 		}
 		break;
 	}
 
 	return ret;
+}
+
+int calc_fb_offset(struct msm_fb_data_type *mfd, struct fb_info *fbi, int bpp)
+{
+	struct msm_panel_info *panel_info = &mfd->panel_info;
+	int remainder, yres, offset;
+
+	if (panel_info->mode2_yres != 0) {
+		yres = panel_info->mode2_yres;
+		remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
+	} else {
+		yres = panel_info->yres;
+		remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
+	}
+
+	if (!remainder)
+		remainder = PAGE_SIZE;
+
+	if (fbi->var.yoffset < yres) {
+		offset = (fbi->var.xoffset * bpp);
+				/* iBuf->buf +=	fbi->var.xoffset * bpp + 0 *
+				yres * fbi->fix.line_length; */
+	} else if (fbi->var.yoffset >= yres && fbi->var.yoffset < 2 * yres) {
+		offset = (fbi->var.xoffset * bpp + yres *
+		fbi->fix.line_length + PAGE_SIZE - remainder);
+	} else {
+		offset = (fbi->var.xoffset * bpp + 2 * yres *
+		fbi->fix.line_length + 2 * (PAGE_SIZE - remainder));
+	}
+	return offset;
 }
 
 static void msm_fb_fillrect(struct fb_info *info,
@@ -1139,7 +1160,7 @@ static int msm_fb_get_lut(struct fb_info *info, void __user *p)
 		return -EFAULT;
 	}
 
-	ret = mfd->get_gamma_curvy(mfd->mdp_pdata->abl_gamma_tbl, &gc, mfd->mdp_pdata->color_enhancment_tbl);
+	ret = mfd->get_gamma_curvy(mfd->mdp_pdata->abl_gamma_tbl, &gc);
 
 	if (ret)
 		return ret;
@@ -1250,6 +1271,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	struct fb_var_screeninfo *var;
 	int *id;
 	int fbram_offset;
+	int remainder, remainder_mode2;
 
 	/*
 	 * fb info initialization
@@ -1387,9 +1409,34 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 	fix->line_length = msm_fb_line_length(mfd->index, panel_info->xres,
 					      bpp);
+
+	/* Make sure all buffers can be addressed on a page boundary by an x
+	 * and y offset */
+
+	remainder = (fix->line_length * panel_info->yres) & (PAGE_SIZE - 1);
+					/* PAGE_SIZE is a power of 2 */
+	if (!remainder)
+		remainder = PAGE_SIZE;
+	remainder_mode2 = (fix->line_length *
+				panel_info->mode2_yres) & (PAGE_SIZE - 1);
+	if (!remainder_mode2)
+		remainder_mode2 = PAGE_SIZE;
+
+	/* calculate smem_len based on max size of two supplied modes */
+	fix->smem_len = MAX((msm_fb_line_length(mfd->index, panel_info->xres,
+					      bpp) *
+			    panel_info->yres + PAGE_SIZE -
+				remainder) * mfd->fb_page,
+			    (msm_fb_line_length(mfd->index,
+					       panel_info->mode2_xres,
+					       bpp) *
+			    panel_info->mode2_yres + PAGE_SIZE -
+				remainder_mode2) * mfd->fb_page);
+
+
 	/* calculate smem_len based on max size of two supplied modes */
 	fix->smem_len = roundup(MAX(msm_fb_line_length(mfd->index,
-					       ALIGN(panel_info->xres, 32),
+					       panel_info->xres,
 					       bpp) *
 			    panel_info->yres * mfd->fb_page,
 			    msm_fb_line_length(mfd->index,
@@ -1399,7 +1446,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 #if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
 	if (mfd->index == 0) {
-		msm_fb_data.xres = ALIGN(panel_info->xres, 32);
+		msm_fb_data.xres = panel_info->xres;
 		msm_fb_data.yres = panel_info->yres;
 	}
 #endif
@@ -1413,8 +1460,9 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 	var->xres = panel_info->xres;
 	var->yres = panel_info->yres;
-	var->xres_virtual = ALIGN(panel_info->xres, 32);
-	var->yres_virtual = panel_info->yres * mfd->fb_page;
+	var->xres_virtual = panel_info->xres;
+	var->yres_virtual = panel_info->yres * mfd->fb_page +
+		((PAGE_SIZE - remainder)/fix->line_length) * mfd->fb_page;
 	var->bits_per_pixel = bpp * 8;	/* FrameBuffer color depth */
 		/*
 		 * id field for fb app
@@ -1468,9 +1516,8 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	fbi->screen_base = fbram;
 	fbi->fix.smem_start = (unsigned long)fbram_phys;
 
-#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
-	if (mfd->index == 0)
-		msmfb_set_var(fbi->screen_base, 0);
+#if defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR)
+        if (mfd->fb_page == 1) fb1_addr_base = fbram;
 #endif
 
 	memset(fbi->screen_base, 0x0, fix->smem_len);
@@ -1795,11 +1842,6 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	add_timer(&mfd->msmfb_no_update_notify_timer);
 	mutex_unlock(&msm_fb_notify_update_sem);
 #endif
-#endif
-
-#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
-	if (mfd->index == 0)
-		msmfb_set_var(mfd->fbi->screen_base, var->yoffset);
 #endif
 
 	down(&msm_fb_pan_sem);
@@ -2439,6 +2481,8 @@ int mdp_blit(struct fb_info *info, struct mdp_blit_req *req)
 
 		/* blit first region */
 		if (((splitreq.flags & 0x07) == 0x07) ||
+			((splitreq.flags & 0x07) == 0x05) ||
+			((splitreq.flags & 0x07) == 0x02) ||
 			((splitreq.flags & 0x07) == 0x0)) {
 
 			if (splitreq.flags & MDP_ROT_90) {
@@ -2519,6 +2563,8 @@ int mdp_blit(struct fb_info *info, struct mdp_blit_req *req)
 
 		/* blit second region */
 		if (((splitreq.flags & 0x07) == 0x07) ||
+			((splitreq.flags & 0x07) == 0x05) ||
+			((splitreq.flags & 0x07) == 0x02) ||
 			((splitreq.flags & 0x07) == 0x0)) {
 			splitreq.src_rect.h = s_h_1;
 			splitreq.src_rect.y = s_y_1;
@@ -3255,6 +3301,10 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	struct mdp_ccs ccs_matrix;
 #endif
 	struct mdp_page_protection fb_page_protection;
+#if defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR)
+	struct msmfb_usb_projector_info tmp_info;
+#endif
+
 	int ret = 0;
 
 	switch (cmd) {
@@ -3501,7 +3551,19 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = -EINVAL;
 #endif
 		break;
-
+#if defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR)
+	case MSMFB_GET_USB_PROJECTOR_INFO:
+		ret = copy_to_user(argp, &usb_pjt_info, sizeof(usb_pjt_info));
+		if (ret)
+			return ret;
+		break;
+	case MSMFB_SET_USB_PROJECTOR_INFO:
+		ret = copy_from_user(&tmp_info, argp, sizeof(tmp_info));
+		usb_pjt_info.latest_offset = tmp_info.latest_offset;
+		if (ret)
+			return ret;
+		break;
+#endif
 	default:
 		MSM_FB_INFO("MDP: unknown ioctl (cmd=%x) received!\n", cmd);
 		ret = -EINVAL;
@@ -3608,7 +3670,7 @@ struct platform_device *msm_fb_add_device(struct platform_device *pdev)
 }
 EXPORT_SYMBOL(msm_fb_add_device);
 
-int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num, int subsys_id)
+int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num)
 {
 	struct fb_info *info;
 

@@ -1,3 +1,5 @@
+ccflags-y := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mtune=cortex-a9 -marm -march=armv7-a -mfpu=neon -ftree-vectorize -mvectorize-with-neon-double
+
 obj-$(CONFIG_MACH_PYRAMID) += pyramid-panel.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += doubleshot-panel.o
 obj-$(CONFIG_MACH_SHOOTER) += shooter-panel.o

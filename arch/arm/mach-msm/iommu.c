@@ -440,6 +440,34 @@ static int __get_pgprot(int prot, int len)
 	return pgprot;
 }
 
+static int __get_pgprot(int prot, int len)
+{
+	unsigned int pgprot;
+	int tex;
+
+	if (prot & IOMMU_CACHE)
+		tex = (pgprot_kernel >> 2) & 0x07;
+	else
+		tex = msm_iommu_tex_class[MSM_IOMMU_ATTR_NONCACHED];
+
+	if (tex < 0 || tex > NUM_TEX_CLASS - 1)
+		return 0;
+
+	if (len == SZ_16M || len == SZ_1M) {
+		pgprot = FL_SHARED;
+		pgprot |= tex & 0x01 ? FL_BUFFERABLE : 0;
+		pgprot |= tex & 0x02 ? FL_CACHEABLE : 0;
+		pgprot |= tex & 0x04 ? FL_TEX0 : 0;
+	} else	{
+		pgprot = SL_SHARED;
+		pgprot |= tex & 0x01 ? SL_BUFFERABLE : 0;
+		pgprot |= tex & 0x02 ? SL_CACHEABLE : 0;
+		pgprot |= tex & 0x04 ? SL_TEX0 : 0;
+	}
+
+	return pgprot;
+}
+
 static int msm_iommu_map(struct iommu_domain *domain, unsigned long va,
 			 phys_addr_t pa, int order, int prot)
 {
@@ -454,7 +482,7 @@ static int msm_iommu_map(struct iommu_domain *domain, unsigned long va,
 	size_t len = 0x1000UL << order;
 	int ret = 0;
 
-	mutex_lock(&msm_iommu_lock);
+	spin_lock_irqsave(&msm_iommu_lock, flags);
 
 	priv = domain->priv;
 	if (!priv) {
@@ -521,7 +549,7 @@ static int msm_iommu_map(struct iommu_domain *domain, unsigned long va,
 
 		if (*fl_pte == 0) {
 			unsigned long *sl;
-			sl = (unsigned long *) __get_free_pages(GFP_KERNEL,
+			sl = (unsigned long *) __get_free_pages(GFP_ATOMIC,
 							get_order(SZ_4K));
 
 			if (!sl) {
@@ -681,7 +709,7 @@ static int msm_iommu_unmap(struct iommu_domain *domain, unsigned long va,
 
 	ret = __flush_iotlb_va(domain, va);
 fail:
-	mutex_unlock(&msm_iommu_lock);
+	spin_unlock_irqrestore(&msm_iommu_lock, flags);
 	return ret;
 }
 
@@ -710,12 +738,13 @@ static int msm_iommu_map_range(struct iommu_domain *domain, unsigned int va,
 	unsigned long fl_offset;
 	unsigned long *sl_table;
 	unsigned long sl_offset, sl_start;
+	unsigned long flags;
 	unsigned int chunk_offset = 0;
 	unsigned int chunk_pa;
 	int ret = 0;
 	struct msm_priv *priv;
 
-	mutex_lock(&msm_iommu_lock);
+	spin_lock_irqsave(&msm_iommu_lock, flags);
 
 	BUG_ON(len & (SZ_4K - 1));
 
@@ -746,7 +775,7 @@ static int msm_iommu_map_range(struct iommu_domain *domain, unsigned int va,
 		/* Set up a 2nd level page table if one doesn't exist */
 		if (*fl_pte == 0) {
 			sl_table = (unsigned long *)
-				 __get_free_pages(GFP_KERNEL, get_order(SZ_4K));
+				 __get_free_pages(GFP_ATOMIC, get_order(SZ_4K));
 
 			if (!sl_table) {
 				pr_debug("Could not allocate second level table\n");
@@ -814,10 +843,11 @@ static int msm_iommu_unmap_range(struct iommu_domain *domain, unsigned int va,
 	unsigned long fl_offset;
 	unsigned long *sl_table;
 	unsigned long sl_start, sl_end;
+	unsigned long flags;
 	int used, i;
 	struct msm_priv *priv;
 
-	mutex_lock(&msm_iommu_lock);
+	spin_lock_irqsave(&msm_iommu_lock, flags);
 
 	BUG_ON(len & (SZ_4K - 1));
 
@@ -871,7 +901,7 @@ static int msm_iommu_unmap_range(struct iommu_domain *domain, unsigned int va,
 	}
 
 	__flush_iotlb(domain);
-	mutex_unlock(&msm_iommu_lock);
+	spin_unlock_irqrestore(&msm_iommu_lock, flags);
 	return 0;
 }
 
@@ -995,6 +1025,12 @@ fail:
 	return 0;
 }
 
+static phys_addr_t msm_iommu_get_pt_base_addr(struct iommu_domain *domain)
+{
+	struct msm_priv *priv = domain->priv;
+	return __pa(priv->pgtable);
+}
+
 static struct iommu_ops msm_iommu_ops = {
 	.domain_init = msm_iommu_domain_init,
 	.domain_destroy = msm_iommu_domain_destroy,
@@ -1006,6 +1042,7 @@ static struct iommu_ops msm_iommu_ops = {
 	.unmap_range = msm_iommu_unmap_range,
 	.iova_to_phys = msm_iommu_iova_to_phys,
 	.domain_has_cap = msm_iommu_domain_has_cap,
+	.get_pt_base_addr = msm_iommu_get_pt_base_addr
 };
 
 static int __init get_tex_class(int icp, int ocp, int mt, int nos)

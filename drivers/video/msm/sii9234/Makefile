@@ -1,3 +1,5 @@
+ccflags-y := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mtune=cortex-a9 -marm -march=armv7-a -mfpu=neon -ftree-vectorize -mvectorize-with-neon-double
+
 obj-$(CONFIG_FB_MSM_HDMI_MHL_SII9234) += sii9234.o
 obj-$(CONFIG_FB_MSM_HDMI_MHL_SII9234) += i2c_master_sw.o
 #obj-$(CONFIG_FB_MSM_HDMI_MHL_SII9234) += si_cpCbus.o

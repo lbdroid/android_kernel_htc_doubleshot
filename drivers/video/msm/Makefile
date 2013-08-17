@@ -1,22 +1,12 @@
-# core framebuffer
-#
+ccflags-y := -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mtune=cortex-a9 -marm -march=armv7-a -mfpu=neon -ftree-vectorize -mvectorize-with-neon-double
+
 obj-y := msm_fb.o
-
-# MDDI interface
-#
-obj-y += mddi.o
-
-# MDDI client/panel drivers
-#
-obj-y += mddi_client_dummy.o
-obj-y += mddi_client_toshiba.o
-obj-y += mddi_client_nt35399.o
 
 obj-$(CONFIG_FB_MSM_LOGO) += logo.o
 obj-$(CONFIG_FB_BACKLIGHT) += msm_fb_bl.o
 
 # MDP
-obj-y += mdp.o mdp_scale_tables.o
+obj-y += mdp.o
 
 obj-$(CONFIG_DEBUG_FS) += mdp_debugfs.o
 
@@ -148,7 +138,8 @@ obj-$(CONFIG_FB_MSM_TVOUT) += tvout_msm.o
 
 obj-$(CONFIG_FB_MSM_EXTMDDI_SVGA) += mddi_ext_lcd.o
 
-obj-$(CONFIG_VIDC_1080P) += vidc/
+obj-$(CONFIG_MSM_VIDC_720P) += vidc/
+obj-$(CONFIG_MSM_VIDC_1080P) += vidc/
 
 obj-$(CONFIG_FB_MSM_HDMI_MHL_SII9234)  += sii9234/
 

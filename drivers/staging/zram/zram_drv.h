@@ -22,7 +22,7 @@
 
 /*
  * Some arbitrary value. This is just to catch
- * invalid value for num_devices module parameter.
+ * invalid value for zram_num_devices module parameter.
  */
 static const unsigned max_num_devices = 32;
 

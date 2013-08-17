@@ -31,6 +31,10 @@
 #include <asm/cacheflush.h>
 #include <asm/cpu.h>
 #include <asm/cputype.h>
+#include <asm/exception.h>
+#ifdef CONFIG_ARM_CPU_TOPOLOGY
+#include <asm/topology.h>
+#endif
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -282,6 +286,9 @@ static void __cpuinit smp_store_cpu_info(unsigned int cpuid)
 	struct cpuinfo_arm *cpu_info = &per_cpu(cpu_data, cpuid);
 
 	cpu_info->loops_per_jiffy = loops_per_jiffy;
+#ifdef CONFIG_ARM_CPU_TOPOLOGY
+	store_cpu_topology(cpuid);
+#endif	
 }
 
 /*
@@ -377,7 +384,9 @@ void __init smp_prepare_boot_cpu(void)
 void __init smp_prepare_cpus(unsigned int max_cpus)
 {
 	unsigned int ncores = num_possible_cpus();
-
+#ifdef CONFIG_ARM_CPU_TOPOLOGY
+	init_cpu_topology();
+#endif
 	smp_store_cpu_info(smp_processor_id());
 
 	/*
@@ -466,9 +475,7 @@ static DEFINE_PER_CPU(struct clock_event_device, percpu_clockevent);
 static void ipi_timer(void)
 {
 	struct clock_event_device *evt = &__get_cpu_var(percpu_clockevent);
-	irq_enter();
 	evt->event_handler(evt);
-	irq_exit();
 }
 
 #ifdef CONFIG_LOCAL_TIMERS
@@ -597,7 +604,9 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 		/* Wake up from WFI/WFE using SGI */
 		break;
 	case IPI_TIMER:
+		irq_enter();
 		ipi_timer();
+		irq_exit();
 		break;
 
 	case IPI_RESCHEDULE:
