@@ -80,7 +80,6 @@
 #include <mach/msm_spi.h>
 #include <mach/msm_serial_hs.h>
 #include <mach/msm_serial_hs_lite.h>
-#include <mach/bcm_bt_lpm.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_memtypes.h>
 #include <asm/mach/mmc.h>
