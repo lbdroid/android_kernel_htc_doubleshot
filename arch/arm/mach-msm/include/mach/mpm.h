@@ -38,6 +38,9 @@ struct msm_mpm_device_data {
 	unsigned int mpm_ipc_irq;
 };
 
+extern struct msm_mpm_device_data msm8660_mpm_dev_data;
+void msm_mpm_irq_extn_init(struct msm_mpm_device_data *mpm_data);
+
 #ifdef CONFIG_MSM_MPM
 extern struct msm_mpm_device_data msm_mpm_dev_data;
 
@@ -48,7 +51,6 @@ bool msm_mpm_irqs_detectable(bool from_idle);
 bool msm_mpm_gpio_irqs_detectable(bool from_idle);
 void msm_mpm_enter_sleep(bool from_idle);
 void msm_mpm_exit_sleep(bool from_idle);
-void msm_mpm_irq_extn_init(void);
 void msm_mpm_set_irq_ignore_list(int *ignore_irq, unsigned num_ignore_irq);
 #else
 
