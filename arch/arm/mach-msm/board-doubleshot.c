@@ -5486,26 +5486,20 @@ struct msm_sdcc_gpio {
 };
 
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
-/*
 static struct msm_sdcc_gpio sdc1_gpio_cfg[] = {
 	{159, "sdc1_dat_0"},
 	{160, "sdc1_dat_1"},
 	{161, "sdc1_dat_2"},
 	{162, "sdc1_dat_3"},
-*/
 #ifdef CONFIG_MMC_MSM_SDC1_8_BIT_SUPPORT
-/*
 	{163, "sdc1_dat_4"},
 	{164, "sdc1_dat_5"},
 	{165, "sdc1_dat_6"},
 	{166, "sdc1_dat_7"},
-*/
 #endif
-/*
 	{167, "sdc1_clk"},
 	{168, "sdc1_cmd"}
 };
-*/
 
 static uint32_t sdc1_on_gpio_table[] = {
 	GPIO_CFG(159, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_10MA), /* DAT0 */
@@ -6246,7 +6240,8 @@ static struct mmc_platform_data msm8x60_sdc3_data = {
 	.msmsdcc_fmid	= 24000000,
 	.msmsdcc_fmax	= 48000000,
 	.nonremovable	= 0,
-	.pclk_src_dfab  = 1,
+	//.pclk_src_dfab  = 1,
+	.msm_bus_voting_data = &sps_to_ddr_bus_voting_data,
 };
 #endif
 
