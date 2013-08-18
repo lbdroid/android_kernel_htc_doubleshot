@@ -5816,7 +5816,7 @@ static struct sdcc_reg sdcc_vdd_reg_data[MAX_SDCC_CONTROLLER];
 /* only SDCC1 requires VCCQ voltage */
 static struct sdcc_reg sdcc_vccq_reg_data[1];
 /* all SDCC controllers may require voting for VDD PAD voltage */
-static struct sdcc_reg sdcc_vddp_reg_data[MAX_SDCC_CONTROLLER];
+//static struct sdcc_reg sdcc_vddp_reg_data[MAX_SDCC_CONTROLLER];
 
 struct sdcc_reg_data {
 	struct sdcc_reg *vdd_data; /* keeps VDD/VCC regulator info */
@@ -6045,7 +6045,7 @@ out:
 	return rc;
 }
 
-static u32 msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
+/*static u32 msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 {
 	u32 rc_pin_cfg = 0;
 	u32 rc_vreg_cfg = 0;
@@ -6054,8 +6054,9 @@ static u32 msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 	struct msm_sdcc_pin_cfg *curr_pin_cfg;
 
 	pdev = container_of(dv, struct platform_device, dev);
-
+*/
 	/* setup gpio/pad */
+/*
 	curr_pin_cfg = &sdcc_pin_cfg_data[pdev->id - 1];
 	if (curr_pin_cfg->cfg_sts == !!vdd)
 		goto setup_vreg;
@@ -6066,14 +6067,16 @@ static u32 msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 		rc_pin_cfg = msm_sdcc_setup_pad(pdev->id, !!vdd);
 
 setup_vreg:
+*/
 	/* setup voltage regulators */
+/*
 	rc_vreg_cfg = msm_sdcc_setup_vreg(pdev->id, !!vdd);
 
 	if (rc_pin_cfg || rc_vreg_cfg)
 		rc = rc_pin_cfg ? rc_pin_cfg : rc_vreg_cfg;
 
 	return rc;
-}
+}*/
 
 #if defined(CONFIG_MMC_MSM_SDC2_SUPPORT) || defined(CONFIG_MMC_MSM_SDC5_SUPPORT)
 static void msm_sdcc_sdio_lpm_gpio(struct device *dv, unsigned int active)
