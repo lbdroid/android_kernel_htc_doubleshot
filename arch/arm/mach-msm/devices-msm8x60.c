@@ -2805,6 +2805,14 @@ struct platform_device msm8660_rpm_stat_device = {
 		.platform_data = &msm_rpm_stat_pdata,
 	},
 };
+
+struct platform_device msm_rpm_stat_device = {
+	.name = "msm_rpm_stat",
+	.id = -1,
+	.dev = {
+		.platform_data = &msm_rpm_stat_pdata,
+	},
+};
 #endif
 
 #define SHARED_IMEM_TZ_BASE 0x2a05f720
