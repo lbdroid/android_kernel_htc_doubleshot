@@ -2438,7 +2438,7 @@ CONFIG_RADIO_TAVARUA=y
 # Graphics support
 #
 # CONFIG_DRM is not set
-# CONFIG_ION is not set
+# CONFIG_ION=y
 # CONFIG_ION_MSM is not set
 # CONFIG_ION_LEAK_CHECK is not set
 CONFIG_MSM_KGSL=y
