@@ -1181,13 +1181,14 @@ static struct msm_usb_host_platform_data msm_usb_host_pdata = {
 };
 #endif
 /* static void msm_hsusb_vbus_power(unsigned phy_info, int on) */
-static void msm_hsusb_vbus_power(bool on)
+/*static void msm_hsusb_vbus_power(bool on)
 {
 	static struct regulator *votg_5v_switch;
 	static struct regulator *ext_5v_reg;
 	static int vbus_is_on;
-
+*/
 	/* If VBUS is already on (or off), do nothing. */
+/*
 	if (on == vbus_is_on)
 		return;
 
@@ -1227,6 +1228,7 @@ static void msm_hsusb_vbus_power(bool on)
 
 	vbus_is_on = on;
 }
+*/
 
 /* ToDo: mark it */
 /* #if defined(CONFIG_USB_GADGET_MSM_72K) || defined(CONFIG_USB_EHCI_MSM_72K) */
