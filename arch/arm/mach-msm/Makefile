@@ -491,6 +491,7 @@ obj-$(CONFIG_MSM_RPM_SMD) += rpm-smd.o
 
 obj-$(CONFIG_PERFLOCK) += perflock.o
 obj-y += htc_ramdump.o
+obj-$(CONFIG_MICROP_COMMON) += atmega_microp_common.o
 
 obj-$(CONFIG_HTC_MONITOR) += htc_monitor.o
 
