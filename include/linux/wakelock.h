@@ -21,7 +21,8 @@
 
 
 enum {
-	WAKE_LOCK_SUSPEND, 
+	WAKE_LOCK_SUSPEND,
+	WAKE_LOCK_IDLE,    /* Prevent low power idle */ 
 	WAKE_LOCK_TYPE_COUNT
 };
 

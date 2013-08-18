@@ -19,7 +19,7 @@ config MT9T013
 config MT9D113
 	bool "Sensor mt9d113 (YUV 2M)"
 	depends on MSM_CAMERA && ARCH_MSM8X60 && !MSM_CAMERA_V4L2
-	default y
+	default n
 	---help---
 	  MICRON 2M YUV Sensor
 	  This sensor is the front camera on QT8660.
@@ -31,6 +31,12 @@ config MT9D112
 	default y
 	---help---
 	  MICRON 2M YUV Sensor
+config IMX105
+  bool "Sensor IMX105 MIPI (BAYER 8M)"
+  depends on MSM_CAMERA && (ARCH_MSM8X60 || ARCH_MSM8960)
+  default n
+  ---help---
+    SONY 8M MIPI Sensor with Autofocus
 config IMX074
 	bool "Sensor IMX074 (BAYER 13.5M)"
 	depends on MSM_CAMERA

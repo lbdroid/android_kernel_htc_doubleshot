@@ -9,6 +9,7 @@ obj-$(CONFIG_IMX175) += imx175_v4l2.o
 obj-$(CONFIG_MACH_ELITE) += imx175_2lane_v4l2.o
 obj-$(CONFIG_MACH_JET) += imx175_2lane_v4l2.o
 obj-$(CONFIG_IMX135) += imx135_v4l2.o
+obj-$(CONFIG_IMX105) += imx105.o imx105_reg.o
 obj-$(CONFIG_VD6869) += vd6869_v4l2.o
 obj-$(CONFIG_OV8838) += ov8838_v4l2.o
 obj-$(CONFIG_S5K3H2YX) += s5k3h2yx_v4l2.o
