@@ -152,10 +152,9 @@ obj-$(CONFIG_MSM_ADSP) += qdsp5/
 obj-$(CONFIG_MSM7KV2_AUDIO) += qdsp5v2/
 obj-$(CONFIG_MSM_RPCSERVER_HANDSET) += rpc_server_handset.o
 obj-$(CONFIG_MSM_QDSP6) += qdsp6/
-obj-$(CONFIG_MSM8X60_AUDIO) += qdsp6v3/
-obj-$(CONFIG_MSM_AUDIO_QDSP6) += qdsp6v3/
-#Yes I know I'm pointing qdsp6v2 -> v3 ... Days of a lazy dev
-obj-$(CONFIG_MSM_AUDIO_QDSP6V2) += qdsp6v3/
+obj-$(CONFIG_MSM8X60_AUDIO) += qdsp6v2/
+obj-$(CONFIG_MSM_AUDIO_QDSP6) += qdsp6v2/
+obj-$(CONFIG_MSM_AUDIO_QDSP6V2) += qdsp6v2/
 obj-$(CONFIG_MSM_HW3D) += hw3d.o
 obj-$(CONFIG_PM) += pm-boot.o
 obj-$(CONFIG_MSM_PM8X60) += pm-8x60.o pm-data.o

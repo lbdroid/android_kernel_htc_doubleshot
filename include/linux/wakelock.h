@@ -25,8 +25,6 @@ enum {
 	WAKE_LOCK_TYPE_COUNT
 };
 
-#define WAKE_LOCK_IDLE 1
-
 struct wake_lock {
 #ifdef CONFIG_HAS_WAKELOCK
 	struct list_head    link;

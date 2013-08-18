@@ -55,7 +55,7 @@ static int support_aic3254;
 static int support_adie;
 static int support_aic3254_use_mclk;
 static int aic3254_use_mclk_counter;
-static bool msm_codec_i2s_slave_mode = true;
+int msm_codec_i2s_slave_mode = 1;
 static struct q6v2audio_aic3254_ops default_aic3254_ops;
 static struct q6v2audio_aic3254_ops *aic3254_ops = &default_aic3254_ops;
 
