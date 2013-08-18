@@ -6655,8 +6655,6 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	 */
 	msm8x60_init_buses();
 	platform_add_devices(early_devices, ARRAY_SIZE(early_devices));
-	/* CPU frequency control is not supported on simulated targets. */
-	acpuclk_init(&acpuclk_8x60_data);
 
 #ifdef CONFIG_PERFLOCK
 	perflock_init(&doubleshot_perflock_data);
