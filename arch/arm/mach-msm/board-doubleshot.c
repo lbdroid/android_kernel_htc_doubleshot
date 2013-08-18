@@ -5486,20 +5486,27 @@ struct msm_sdcc_gpio {
 };
 
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
+/*
 static struct msm_sdcc_gpio sdc1_gpio_cfg[] = {
 	{159, "sdc1_dat_0"},
 	{160, "sdc1_dat_1"},
 	{161, "sdc1_dat_2"},
 	{162, "sdc1_dat_3"},
+*/
 #ifdef CONFIG_MMC_MSM_SDC1_8_BIT_SUPPORT
+/*
 	{163, "sdc1_dat_4"},
 	{164, "sdc1_dat_5"},
 	{165, "sdc1_dat_6"},
 	{166, "sdc1_dat_7"},
+*/
 #endif
+/*
 	{167, "sdc1_clk"},
 	{168, "sdc1_cmd"}
 };
+*/
+
 static uint32_t sdc1_on_gpio_table[] = {
 	GPIO_CFG(159, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_10MA), /* DAT0 */
 	GPIO_CFG(160, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_10MA), /* DAT1 */
@@ -5579,27 +5586,31 @@ static struct msm_sdcc_pad_pull_cfg sdc3_pad_off_pull_cfg[] = {
 #endif
 
 #ifdef CONFIG_MMC_MSM_SDC4_SUPPORT
-static struct msm_sdcc_pad_drv_cfg sdc4_pad_on_drv_cfg[] = {
+/*static struct msm_sdcc_pad_drv_cfg sdc4_pad_on_drv_cfg[] = {
 	{TLMM_HDRV_SDC4_CLK, GPIO_CFG_8MA},
 	{TLMM_HDRV_SDC4_CMD, GPIO_CFG_8MA},
 	{TLMM_HDRV_SDC4_DATA, GPIO_CFG_8MA}
 };
-
+*/
+/*
 static struct msm_sdcc_pad_pull_cfg sdc4_pad_on_pull_cfg[] = {
 	{TLMM_PULL_SDC4_CMD, GPIO_CFG_PULL_UP},
 	{TLMM_PULL_SDC4_DATA, GPIO_CFG_PULL_UP}
 };
-
+*/
+/*
 static struct msm_sdcc_pad_drv_cfg sdc4_pad_off_drv_cfg[] = {
 	{TLMM_HDRV_SDC4_CLK, GPIO_CFG_2MA},
 	{TLMM_HDRV_SDC4_CMD, GPIO_CFG_2MA},
 	{TLMM_HDRV_SDC4_DATA, GPIO_CFG_2MA}
 };
-
+*/
+/*
 static struct msm_sdcc_pad_pull_cfg sdc4_pad_off_pull_cfg[] = {
 	{TLMM_PULL_SDC4_CMD, GPIO_CFG_PULL_DOWN},
 	{TLMM_PULL_SDC4_DATA, GPIO_CFG_PULL_DOWN}
 };
+*/
 #endif
 
 struct msm_sdcc_pin_cfg {
@@ -5620,7 +5631,7 @@ struct msm_sdcc_pin_cfg {
 	u8 sdio_lpm_gpio_cfg;
 };
 
-
+/*
 static struct msm_sdcc_pin_cfg sdcc_pin_cfg_data[MAX_SDCC_CONTROLLER] = {
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
 	[0] = {
@@ -5666,6 +5677,7 @@ static struct msm_sdcc_pin_cfg sdcc_pin_cfg_data[MAX_SDCC_CONTROLLER] = {
 	}
 #endif
 };
+*/
 
 /*static int msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
 {
@@ -5837,11 +5849,13 @@ struct sdcc_reg_data {
 /* msm8x60 have 5 SDCC controllers */
 static struct sdcc_reg_data sdcc_vreg_data[MAX_SDCC_CONTROLLER];
 
+/*
 static int msm_sdcc_vreg_init_reg(struct sdcc_reg *vreg)
 {
 	int rc = 0;
-
+*/
 	/* Get the regulator handle */
+/*
 	vreg->reg = regulator_get(NULL, vreg->reg_name);
 	if (IS_ERR(vreg->reg)) {
 		rc = PTR_ERR(vreg->reg);
@@ -5849,8 +5863,9 @@ static int msm_sdcc_vreg_init_reg(struct sdcc_reg *vreg)
 			__func__, vreg->reg_name, rc);
 		goto out;
 	}
-
+*/
 	/* Set the voltage level if required */
+/*
 	if (vreg->set_voltage_sup) {
 		rc = regulator_set_voltage(vreg->reg, vreg->level,
 					vreg->level);
@@ -5867,6 +5882,7 @@ vreg_put:
 out:
 	return rc;
 }
+*/
 
 static inline void msm_sdcc_vreg_deinit_reg(struct sdcc_reg *vreg)
 {
@@ -5874,6 +5890,7 @@ static inline void msm_sdcc_vreg_deinit_reg(struct sdcc_reg *vreg)
 }
 
 /* this init function should be called only once for each SDCC */
+/*
 static int msm_sdcc_vreg_init(int dev_id, unsigned char init)
 {
 	int rc = 0;
@@ -5886,10 +5903,12 @@ static int msm_sdcc_vreg_init(int dev_id, unsigned char init)
 	curr_vddp_reg = curr->vddp_data;
 
 	if (init) {
+*/
 		/*
 		 * get the regulator handle from voltage regulator framework
 		 * and then try to set the voltage level for the regulator
 		 */
+/*
 		if (curr_vdd_reg) {
 			rc = msm_sdcc_vreg_init_reg(curr_vdd_reg);
 			if (rc)
@@ -5907,7 +5926,9 @@ static int msm_sdcc_vreg_init(int dev_id, unsigned char init)
 		}
 		goto out;
 	} else
+*/
 		/* deregister with all regulators from regulator framework */
+/*
 		goto vddp_reg_deinit;
 
 vddp_reg_deinit:
@@ -5922,7 +5943,9 @@ vdd_reg_deinit:
 out:
 	return rc;
 }
+*/
 
+/*
 static int msm_sdcc_vreg_enable(struct sdcc_reg *vreg)
 {
 	int rc = -1;
@@ -5936,8 +5959,9 @@ static int msm_sdcc_vreg_enable(struct sdcc_reg *vreg)
 		}
 		vreg->enabled = 1;
 	}
-
+*/
 	/* Put always_on regulator in HPM (high power mode) */
+/*
 	if (vreg->always_on && vreg->op_pwr_mode_sup) {
 		rc = regulator_set_optimum_mode(vreg->reg, vreg->hpm_uA);
 		if (rc < 0) {
@@ -5957,12 +5981,15 @@ vreg_disable:
 out:
 	return rc;
 }
+*/
 
+/*
 static int msm_sdcc_vreg_disable(struct sdcc_reg *vreg)
 {
 	int rc = -1;
-
+*/
 	/* Never disable always_on regulator */
+/*
 	if (!vreg->always_on) {
 		rc = regulator_disable(vreg->reg);
 		if (rc) {
@@ -5972,8 +5999,9 @@ static int msm_sdcc_vreg_disable(struct sdcc_reg *vreg)
 		}
 		vreg->enabled = 0;
 	}
-
+*/
 	/* Put always_on regulator in LPM (low power mode) */
+/*
 	if (vreg->always_on && vreg->op_pwr_mode_sup) {
 		rc = regulator_set_optimum_mode(vreg->reg, vreg->lpm_uA);
 		if (rc < 0) {
@@ -5990,7 +6018,9 @@ static int msm_sdcc_vreg_disable(struct sdcc_reg *vreg)
 out:
 	return rc;
 }
+*/
 
+/*
 static int msm_sdcc_setup_vreg(int dev_id, unsigned char enable)
 {
 	int rc = 0;
@@ -6001,13 +6031,15 @@ static int msm_sdcc_setup_vreg(int dev_id, unsigned char enable)
 	curr_vdd_reg = curr->vdd_data;
 	curr_vccq_reg = curr->vccq_data;
 	curr_vddp_reg = curr->vddp_data;
-
+*/
 	/* check if regulators are initialized or not? */
+/*
 	if ((curr_vdd_reg && !curr_vdd_reg->reg) ||
 		(curr_vccq_reg && !curr_vccq_reg->reg) ||
 		(curr_vddp_reg && !curr_vddp_reg->reg)) {
+*/
 		/* initialize voltage regulators required for this SDCC */
-		rc = msm_sdcc_vreg_init(dev_id, 1);
+/*		rc = msm_sdcc_vreg_init(dev_id, 1);
 		if (rc) {
 			pr_err("%s: regulator init failed = %d\n",
 				__func__, rc);
@@ -6054,6 +6086,7 @@ static int msm_sdcc_setup_vreg(int dev_id, unsigned char enable)
 out:
 	return rc;
 }
+*/
 
 /*static u32 msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 {
@@ -6182,6 +6215,7 @@ static unsigned int msm8x60_sdcc_slot_status(struct device *dev)
 
 #endif
 
+/*
 static uint32_t msm_rpm_get_swfi_latency(void)
 {
 	int i;
@@ -6194,6 +6228,7 @@ static uint32_t msm_rpm_get_swfi_latency(void)
 
 	return 0;
 }
+*/
 
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
 static unsigned int doubleshot_emmcslot_type = MMC_TYPE_MMC;
