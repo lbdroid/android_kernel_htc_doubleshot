@@ -377,7 +377,7 @@ obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-keypad.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-audio.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-microp.o atmega_microp_common.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += htc_bdaddress.o board-doubleshot-rfkill.o
-obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-mmc.o board-doubleshot-wifi.o
+obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-mmc.o board-doubleshot-wifi.o htc_wifi_nvs.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += htc_util.o devices_htc.o htc_awb_cal.o
 
 obj-$(CONFIG_MACH_SHOOTER) += board-shooter.o
@@ -491,6 +491,7 @@ obj-$(CONFIG_MSM_RPM_SMD) += rpm-smd.o
 
 obj-$(CONFIG_PERFLOCK) += perflock.o
 obj-y += htc_ramdump.o
+obj-$(CONFIG_MICROP_COMMON) += atmega_microp_common.o
 
 obj-$(CONFIG_HTC_MONITOR) += htc_monitor.o
 
