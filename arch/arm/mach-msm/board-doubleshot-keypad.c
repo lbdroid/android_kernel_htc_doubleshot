@@ -30,6 +30,8 @@
 /*#include "proc_comm.h"*/
 
 #include <linux/mfd/pmic8058.h>
+
+#include "asm/system.h"
 #include <linux/input/pmic8058-keypad.h>
 
 static char *keycaps = "--qwerty";
