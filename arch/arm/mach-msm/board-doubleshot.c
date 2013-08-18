@@ -834,7 +834,7 @@ static struct i2c_board_info msm_isa1200_board_info[] = {
 };
 #endif
 
-static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
+/*static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
 		.suspend_supported = 1,
 		.idle_supported = 1,
@@ -889,6 +889,7 @@ static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 		.residency = 0,
 	},
 };
+*/
 
 static struct msm_cpuidle_state msm_cstates[] __initdata = {
 	{0, 0, "C0", "WFI",
