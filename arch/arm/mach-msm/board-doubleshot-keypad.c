@@ -25,6 +25,7 @@
 #include <mach/irqs.h>
 #include <mach/atmega_microp.h>
 
+#include <linux/moduleparam.h>
 #include "board-doubleshot.h"
 /*#include "proc_comm.h"*/
 
