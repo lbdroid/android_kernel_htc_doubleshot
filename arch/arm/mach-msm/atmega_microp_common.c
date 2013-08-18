@@ -29,6 +29,7 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 #include "proc_comm.h"
+#include <linux/module.h>
 
 
 #define I2C_READ_RETRY_TIMES			10
