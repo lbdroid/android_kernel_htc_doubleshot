@@ -14,6 +14,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/gpio.h>
 #include <linux/gpio_event.h>
 #ifndef CONFIG_ARCH_MSM8X60
