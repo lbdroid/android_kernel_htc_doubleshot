@@ -139,6 +139,7 @@ static inline int msm_rpmrs_clear_nosleep(
 }
 
 void msm_rpmrs_show_resources(void);
+s32 msm_cpuidle_get_deep_idle_latency(void);
 int msm_rpmrs_levels_init(struct msm_rpmrs_platform_data *data);
 void msm_rpmrs_lpm_init(uint32_t pxo, uint32_t l2_cache, uint32_t vdd_mem, uint32_t vdd_dig);
 
