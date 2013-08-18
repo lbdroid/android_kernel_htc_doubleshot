@@ -5667,7 +5667,7 @@ static struct msm_sdcc_pin_cfg sdcc_pin_cfg_data[MAX_SDCC_CONTROLLER] = {
 #endif
 };
 
-static int msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
+/*static int msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
 {
 	int rc = 0;
 	struct msm_sdcc_pin_cfg *curr;
@@ -5694,7 +5694,9 @@ static int msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
 					curr->gpio_data[n].name);
 				goto free_gpios;
 			}
+*/
 			/* set direction as output for all GPIOs */
+/*
 			rc = gpio_direction_output(
 				curr->gpio_data[n].no, 1);
 			if (rc) {
@@ -5705,11 +5707,13 @@ static int msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
 			}
 			curr->gpio_data[n].is_enabled = 1;
 		} else {
+*/
 			/*
 			 * now free this GPIO which will put GPIO
 			 * in low power mode and will also put GPIO
 			 * in input mode
 			 */
+/*
 			if (curr->gpio_data[n].always_on)
 				continue;
 			pr_debug("%s: disable: %s\n", __func__,
@@ -5727,8 +5731,9 @@ free_gpios:
 out:
 	return rc;
 }
+*/
 
-static int msm_sdcc_setup_pad(int dev_id, unsigned int enable)
+/*static int msm_sdcc_setup_pad(int dev_id, unsigned int enable)
 {
 	int rc = 0;
 	struct msm_sdcc_pin_cfg *curr;
@@ -5739,10 +5744,12 @@ static int msm_sdcc_setup_pad(int dev_id, unsigned int enable)
 		goto out;
 
 	if (enable) {
+*/
 		/*
 		 * set up the normal driver strength and
 		 * pull config for pads
 		 */
+/*
 		for (n = 0; n < curr->pad_drv_data_size; n++) {
 			if (curr->sdio_lpm_gpio_cfg) {
 				if (curr->pad_drv_on_data[n].drv ==
@@ -5762,7 +5769,9 @@ static int msm_sdcc_setup_pad(int dev_id, unsigned int enable)
 				curr->pad_pull_on_data[n].pull_val);
 		}
 	} else {
+*/
 		/* set the low power config for pads */
+/*
 		for (n = 0; n < curr->pad_drv_data_size; n++) {
 			if (curr->sdio_lpm_gpio_cfg) {
 				if (curr->pad_drv_off_data[n].drv ==
@@ -5788,6 +5797,7 @@ static int msm_sdcc_setup_pad(int dev_id, unsigned int enable)
 out:
 	return rc;
 }
+*/
 
 struct sdcc_reg {
 	/* VDD/VCC/VCCQ regulator name on PMIC8058/PMIC8089*/
