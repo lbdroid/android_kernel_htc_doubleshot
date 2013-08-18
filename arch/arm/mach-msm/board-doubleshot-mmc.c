@@ -20,6 +20,7 @@
 #include <linux/err.h>
 #include <linux/debugfs.h>
 #include <linux/gpio.h>
+#include <linux/module.h>
 
 #include <asm/gpio.h>
 #include <asm/io.h>
@@ -35,7 +36,7 @@
 #include <mach/msm_iomap.h>
 #include <linux/mfd/pmic8058.h>
 //#include <mach/htc_sleep_clk.h>
-#include "mpm.h"
+#include <mach/mpm.h>
 #include <linux/irq.h>
 
 #if 0
@@ -165,7 +166,7 @@ static struct mmc_platform_data doubleshot_wifi_data = {
         .msmsdcc_fmid   = 24000000,
         .msmsdcc_fmax   = 48000000,
         .nonremovable   = 0,
-	.pclk_src_dfab	= 1,
+	//.pclk_src_dfab	= 1,
 	//.cfg_mpm_sdiowakeup = msm_sdcc_cfg_mpm_sdiowakeup,
 	// HTC_WIFI_MOD, temp remove dummy52
 	//.dummy52_required = 1,
