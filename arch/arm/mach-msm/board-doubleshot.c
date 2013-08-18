@@ -6786,8 +6786,8 @@ static void __init doubleshot_charm_init_early(void)
 	msm8x60_allocate_memory_regions();
 }
 
-static void __init doubleshot_fixup(struct machine_desc *desc, struct tag *tags,
-                                 char **cmdline, struct meminfo *mi)
+static void __init doubleshot_fixup(struct tag *tags,
+		char **cmdline, struct meminfo *mi)
 {
 	engineerid = parse_tag_engineerid(tags);
         mi->nr_banks = 1;
