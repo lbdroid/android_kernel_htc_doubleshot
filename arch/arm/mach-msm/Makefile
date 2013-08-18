@@ -372,12 +372,13 @@ obj-$(CONFIG_MACH_RUBY) += board-ruby-mmc.o board-ruby-wifi.o htc_wifi_nvs.o
 obj-$(CONFIG_MACH_RUBY) += htc_util.o devices_htc.o htc_awb_cal.o
 obj-$(CONFIG_MACH_RUBY) += board-ruby-audio.o
 
-obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot.o devices_htc.o
+obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-keypad.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-audio.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-microp.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += htc_bdaddress.o board-doubleshot-rfkill.o
 obj-$(CONFIG_MACH_DOUBLESHOT) += board-doubleshot-mmc.o board-doubleshot-wifi.o
+obj-$(CONFIG_MACH_DOUBLESHOT) += htc_util.o devices_htc.o htc_awb_cal.o
 
 obj-$(CONFIG_MACH_SHOOTER) += board-shooter.o
 obj-$(CONFIG_MACH_SHOOTER) += board-shooter-keypad.o
