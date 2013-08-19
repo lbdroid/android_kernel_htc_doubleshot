@@ -23,6 +23,7 @@ endif
 endif
 
 obj-y += acpuclock.o
+obj-y += drv_callback.o
 obj-y += radio_feedback.o
 obj-$(CONFIG_ARCH_MSM7X27) += acpuclock-7627.o clock-pll.o
 obj-$(CONFIG_ARCH_MSM_SCORPION) += pmu.o
