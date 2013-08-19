@@ -13,7 +13,7 @@ echo >> build_log.txt
 echo Writing configs ...
 make doubleshot_defconfig | tee -a build_log.txt
 echo >> build_log.txt
-make -j4 | tee -a build_log.txt
+make -j6 | tee -a build_log.txt
 if [ ! -f arch/arm/boot/zImage ];
 then
     echo An error occured in the build process, aborting...
