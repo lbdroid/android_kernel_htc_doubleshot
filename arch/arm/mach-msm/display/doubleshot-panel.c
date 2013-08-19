@@ -13,6 +13,10 @@
  *
  */
 
+#include "../../../../drivers/video/msm/msm_fb.h"
+#include "../../../../drivers/video/msm/mipi_dsi.h"
+#include "../../../../drivers/video/msm/mdp4.h"
+
 #include <asm/io.h>
 #include <asm/mach-types.h>
 #include <linux/clk.h>
@@ -33,10 +37,8 @@
 #include "../devices.h"
 #include "../board-doubleshot.h"
 #include "../devices-msm8x60.h"
-#include "../../../../drivers/video/msm/mdp_hw.h"
-#include "../../../../drivers/video/msm/msm_fb.h"
-#include "../../../../drivers/video/msm/mipi_dsi.h"
-#include "../../../../drivers/video/msm/mdp4.h"
+
+//#include "../../../../drivers/video/msm/mdp_hw.h"
 
 //extern int panel_type;
 
@@ -369,13 +371,6 @@ static struct msm_bus_paths rotator_bus_scale_usecases[] = {
 	},
 };
 
-struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
-	rotator_bus_scale_usecases,
-	ARRAY_SIZE(rotator_bus_scale_usecases),
-	.name = "rotator",
-};
-
-
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	/* For now, 0th array entry is reserved.
 	 * Please leave 0 as is and don't use it
@@ -677,7 +672,7 @@ static unsigned char doubleshot_shrink_pwm(int val)
 	return shrink_br;
 }
 
-static struct msm_panel_common_pdata mipi_panel_data = {
+static struct mipi_dsi_panel_platform_data mipi_panel_data = {
 	.shrink_pwm = doubleshot_shrink_pwm,
 };
 
