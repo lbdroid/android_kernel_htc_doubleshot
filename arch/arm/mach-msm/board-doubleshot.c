@@ -18,6 +18,7 @@
 #include <linux/io.h>
 #include <linux/mfd/pmic8058.h>
 #include <linux/msm_ssbi.h>
+#include <linux/msm_tsens.h>
 #include <linux/leds.h>
 #include <linux/pmic8058-othc.h>
 #include <linux/mfd/pmic8901.h>
@@ -141,6 +142,7 @@
 #include "rpm_resources.h"
 #include "acpuclock.h"
 #include "board-storage-common-a.h"
+#include "sysinfo-8x60.h"
 #include <mach/board_htc.h>
 
 #ifdef CONFIG_PERFLOCK
@@ -187,10 +189,6 @@ int set_three_phase_freq_badass(int cpufreq);
 #define CONFIG_DS_MT9V113
 
 int __init dot_init_panel(struct resource *res, size_t size);
-#ifdef CONFIG_ION_MSM
-int __init doubleshot_ion_reserve_memory(struct memtype_reserve *table);
-int __init doubleshot_ion_init(void);
-#endif
 
 enum {
 	GPIO_EXPANDER_IRQ_BASE  = PM8901_IRQ_BASE + NR_PMIC8901_IRQS,
@@ -3367,6 +3365,9 @@ static struct i2c_board_info msm_i2c_gsbi7_mhl_sii9234_info[] =
 #endif
 #endif
 
+#ifdef CONFIG_ION_MSM
+static struct platform_device ion_dev;
+#endif
 
 static struct platform_device *doubleshot_devices[] __initdata = {
 	&ram_console_device,
@@ -3481,12 +3482,124 @@ static struct platform_device *doubleshot_devices[] __initdata = {
 //	&msm_tsens_device,
 	&msm8660_rpm_device,
 	&cable_detect_device,
+#ifdef CONFIG_ION_MSM
+	&ion_dev,
+#endif
 #ifdef CONFIG_BT
 	&doubleshot_rfkill,
 #endif
 	&pm8058_leds,
 	&msm8660_device_watchdog,
 };
+
+#ifdef CONFIG_ION_MSM
+static struct ion_cp_heap_pdata cp_mm_ion_pdata = {
+	.permission_type = IPT_TYPE_MM_CARVEOUT,
+	.align = PAGE_SIZE,
+	.request_region = request_smi_region,
+	.release_region = release_smi_region,
+	.setup_region = setup_smi_region,
+};
+
+static struct ion_cp_heap_pdata cp_mfc_ion_pdata = {
+	.permission_type = IPT_TYPE_MFC_SHAREDMEM,
+	.align = PAGE_SIZE,
+	.request_region = request_smi_region,
+	.release_region = release_smi_region,
+	.setup_region = setup_smi_region,
+};
+
+static struct ion_cp_heap_pdata cp_wb_ion_pdata = {
+	.permission_type = IPT_TYPE_MDP_WRITEBACK,
+	.align = PAGE_SIZE,
+};
+
+static struct ion_co_heap_pdata mm_fw_co_ion_pdata = {
+	.adjacent_mem_id = ION_CP_MM_HEAP_ID,
+	.align = SZ_128K,
+};
+
+static struct ion_co_heap_pdata co_ion_pdata = {
+	.adjacent_mem_id = INVALID_HEAP_ID,
+	.align = PAGE_SIZE,
+};
+
+static struct ion_platform_data ion_pdata = {
+	.nr = MSM_ION_HEAP_NUM,
+	.heaps = {
+		{
+			.id	= ION_SYSTEM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_SYSTEM,
+			.name	= ION_VMALLOC_HEAP_NAME,
+		},
+		{
+			.id	= ION_CP_MM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_MM_HEAP_NAME,
+			.size	= MSM_ION_MM_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &cp_mm_ion_pdata,
+		},
+		{
+			.id	= ION_MM_FIRMWARE_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_MM_FIRMWARE_HEAP_NAME,
+			.size	= MSM_ION_MM_FW_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &mm_fw_co_ion_pdata,
+		},
+		{
+			.id	= ION_CP_MFC_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_MFC_HEAP_NAME,
+			.size	= MSM_ION_MFC_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &cp_mfc_ion_pdata,
+		},
+		{
+			.id	= ION_SF_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_SF_HEAP_NAME,
+			.size	= MSM_ION_SF_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *)&co_ion_pdata,
+		},
+		{
+			.id	= ION_CAMERA_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_CAMERA_HEAP_NAME,
+			.base	= MSM_ION_CAMERA_BASE,
+			.size	= MSM_ION_CAMERA_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &co_ion_pdata,
+		},
+		{
+			.id	= ION_CP_WB_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_WB_HEAP_NAME,
+			.base	= MSM_ION_WB_BASE,
+			.size	= MSM_ION_WB_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &cp_wb_ion_pdata,
+		},
+		{
+			.id	= ION_AUDIO_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_AUDIO_HEAP_NAME,
+			.base	= MSM_ION_AUDIO_BASE,
+			.size	= MSM_ION_AUDIO_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &co_ion_pdata,
+		},
+	}
+};
+
+static struct platform_device ion_dev = {
+	.name = "ion-msm",
+	.id = 1,
+	.dev = { .platform_data = &ion_pdata },
+};
+#endif
 
 static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 	/* Kernel SMI memory pool for video core, used for firmware */
@@ -3517,6 +3630,17 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 		.flags	= 	MEMTYPE_FLAGS_FIXED,
 	},
 };
+
+static void __init reserve_ion_memory(void)
+{
+#ifdef CONFIG_ION_MSM
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
+#endif
+}
 
 #ifdef CONFIG_ANDROID_PMEM
 static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
@@ -3568,14 +3692,24 @@ static void __init reserve_pmem_memory(void)
 #endif
 }
 
+static void __init reserve_ion_memory(void)
+{
+#ifdef CONFIG_ION_MSM
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
+#endif
+}
+
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
 #ifdef CONFIG_ION_MSM
-	doubleshot_ion_reserve_memory(msm8x60_reserve_table);
+	reserve_ion_memory(msm8x60_reserve_table);
 #endif
-
 	size_pmem_devices();
-	reserve_pmem_memory();
+	reserve_mdp_memory();
 }
 
 static int msm8x60_paddr_to_memtype(unsigned int paddr)
@@ -6528,7 +6662,7 @@ struct msm_board_data {
 };
 
 static struct msm_board_data doubleshot_board_data __initdata = {
-	.gpiomux_cfgs = msm8x60_pyramid_gpiomux_cfgs,
+	.gpiomux_cfgs = msm8x60_doubleshot_gpiomux_cfgs,
 };
 
 void doubleshot_add_usb_devices(void)
@@ -6716,14 +6850,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 
 	msm8x60_cfg_smsc911x();
 	if (SOCINFO_VERSION_MAJOR(socinfo_get_version()) != 1)
-		platform_add_devices(msm_footswitch_devices,
-				     msm8660_num_footswitch);
+		platform_add_devices(msm_footswitch_devices, msm_num_footswitch_devices);
 	platform_add_devices(doubleshot_devices,
 			     ARRAY_SIZE(doubleshot_devices));
-
-#ifdef CONFIG_ION_MSM
-	doubleshot_ion_init();
-#endif
 
 	/*usb driver won't be loaded in MFG 58 station and gift mode*/
 	if (!(board_mfg_mode() == 6 || board_mfg_mode() == 7))

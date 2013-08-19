@@ -38,6 +38,12 @@
 #include "../board-doubleshot.h"
 #include "../devices-msm8x60.h"
 
+#ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
+#define MSM_FB_OVERLAY0_WRITEBACK_SIZE roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
+#else
+#define MSM_FB_OVERLAY0_WRITEBACK_SIZE (0)
+#endif
+
 //#include "../../../../drivers/video/msm/mdp_hw.h"
 
 //extern int panel_type;
@@ -729,6 +735,11 @@ static struct msm_panel_common_pdata mdp_pdata = {
 	.mdp_bus_scale_table = &mdp_bus_scale_pdata,
 #endif
 };
+
+void __init doubleshot_mdp_writeback(void)
+{
+	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
+}
 
 static void __init msm_fb_add_devices(void)
 {

@@ -35,6 +35,8 @@
 /* for Register dump */
 #include <mach/msm_iomap.h>
 
+#include <mach/msm_iomap-8x60.h>
+
 #include "sysinfo-8x60.h"
 
 /* For GPIO dump */

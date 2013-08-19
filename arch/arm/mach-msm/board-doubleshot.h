@@ -290,4 +290,6 @@ int __init doubleshot_init_mmc(void);
 int __init doubleshot_init_keypad(void);
 unsigned int doubleshot_get_engineerid(void);
 
+void doubleshot_mdp_writeback(void);
+
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_DOUBLESHOT_H */
