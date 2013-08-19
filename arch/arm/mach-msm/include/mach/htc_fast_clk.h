@@ -14,10 +14,7 @@
  *
  */
 
-#define ID_WIFI	0
-#define ID_BT	1
-#define CLK_OFF	0
-#define CLK_ON	1
+#include <mach/htc_sleep_clk.h>
 
 struct htc_fast_clk_platform_data {
 	int mode;

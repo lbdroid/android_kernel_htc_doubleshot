@@ -28,3 +28,4 @@ obj-$(CONFIG_OV5693) += ov5693_v4l2.o
 obj-$(CONFIG_S5K6A2YA) += s5k6a2ya_v4l2.o
 obj-$(CONFIG_S5K3H1GX) += s5k3h1gx_v4l2.o
 obj-$(CONFIG_MT9V113) += mt9v113_v4l2.o mt9v113_reg_lens_9251.o
+obj-$(CONFIG_MT9D015) += mt9d015.o mt9d015_reg_vigor.o

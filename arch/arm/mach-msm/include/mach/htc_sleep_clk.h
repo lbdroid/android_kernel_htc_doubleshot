@@ -22,6 +22,11 @@
 #define CLK_OFF	(0)
 #define CLK_ON	(1)
 
+struct htc_sleep_clk_platform_data {
+	/* sleep clock control pin */
+	int sleep_clk_pin;
+};
+
 int htc_sleep_clk_init(int sleep_clk_pin);
 int htc_wifi_bt_sleep_clk_ctl(int on, int id);
 

@@ -1065,6 +1065,14 @@ typedef enum {
 
 #ifdef CONFIG_ARCH_MSM8X60
 
+#ifdef CONFIG_ARCH_MSM8X60_LTE
+typedef struct {
+  uint32_t count;
+  uint32_t total_sleep_duration;
+  uint32_t is_in_sleep_mode;
+} htc_sleep_info_ex;
+#endif
+
 typedef struct {
   uint32_t timestamp;
 } stat_wakeup_info;
@@ -1125,6 +1133,10 @@ typedef struct {
 } stats_blob;
 #endif
 
-int htc_get_xo_vdd_min_info(uint32_t *xo_count, uint64_t *xo_time, uint32_t *vddmin_count, uint64_t *vddmin_time);
+extern int htc_get_xo_vdd_min_info(uint32_t *xo_count, uint64_t *xo_time, uint32_t *vddmin_count, uint64_t *vddmin_time);
+extern void htc_get_mpss_timestamp(uint64_t *active_set_time, uint64_t *sleep_set_time);
+extern void htc_get_lpass_timestamp(uint64_t *active_set_time, uint64_t *sleep_set_time);
+extern uint64_t htc_get_mpss_total_sleep_time(void);
+extern uint64_t htc_get_lpass_total_sleep_time(void);
 
 #endif 

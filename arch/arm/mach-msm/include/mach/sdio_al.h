@@ -15,12 +15,6 @@
  * SDIO-Abstraction-Layer API.
  */
 
-#if defined(CONFIG_ARCH_MSM7X30_SMD)
-#include <mach/7x30-smd/sdio_al.h>
-#elif defined(CONFIG_ARCH_MSM8X60_LTE)
-#include <mach/8x60-lte/sdio_al.h>
-#endif
-
 #ifndef __SDIO_AL__
 #define __SDIO_AL__
 
@@ -41,11 +35,13 @@ struct sdio_channel; /* Forward Declaration */
 struct sdio_al_platform_data {
 	int (*config_mdm2ap_status)(int);
 	int (*get_mdm2ap_status)(void);
+	void (*trigger_mdm_fatal)(void); /* HTC */
 	int allow_sdioc_version_major_2;
 	int peer_sdioc_version_minor;
 	int peer_sdioc_version_major;
 	int peer_sdioc_boot_version_minor;
 	int peer_sdioc_boot_version_major;
+	int mdm2ap_errfatal_gpio; /* HTC */
 };
 
 /**
@@ -119,6 +115,10 @@ int sdio_write_avail(struct sdio_channel *ch);
  * @return byte count on success, negative value on error.
  */
 int sdio_read_avail(struct sdio_channel *ch);
+
+extern void ex_charm_dump_mdm_related_gpio_status(void); /* HTC */
+
+extern int sdio_dun_ch_init; /* HTC: comes from sdio_al. for init. sync. */
 
 #else
 

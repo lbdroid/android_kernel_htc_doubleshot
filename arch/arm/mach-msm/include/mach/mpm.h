@@ -47,6 +47,7 @@ bool msm_mpm_irqs_detectable(bool from_idle);
 bool msm_mpm_gpio_irqs_detectable(bool from_idle);
 void msm_mpm_enter_sleep(bool from_idle);
 void msm_mpm_exit_sleep(bool from_idle);
+void msm_mpm_set_irq_ignore_list(int *ignore_irq, unsigned num_ignore_irq);
 #else
 static inline int msm_mpm_enable_irq(unsigned int irq, unsigned int enable)
 { return -ENODEV; }
