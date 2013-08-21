@@ -11,24 +11,7 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/thermal.h>
-#include <linux/interrupt.h>
-#include <linux/delay.h>
-#include <linux/slab.h>
-
-#include <linux/io.h>
-#include <mach/msm_iomap.h>
-#include <linux/pm.h>
-
-enum tsens_trip_type {
-	TSENS_TRIP_STAGE3 = 0,
-	TSENS_TRIP_STAGE2,
-	TSENS_TRIP_STAGE1,
-	TSENS_TRIP_STAGE0,
-	TSENS_TRIP_NUM,
-};
+#include "msm_tsens.h"
 
 #define TSENS_NUM_SENSORS	1 
 #define TSENS_CAL_DEGC		30 
@@ -71,20 +54,6 @@ enum tsens_trip_type {
 #define TSENS_LOWER_INT_MASK (1 << 1)
 #define TSENS_UPPER_INT_MASK (1 << 2)
 #define TSENS_TRDY_MASK (1 << 7)
-
-struct tsens_tm_device_sensor {
-	struct thermal_zone_device	*tz_dev;
-	enum thermal_device_mode	mode;
-	unsigned int			sensor_num;
-};
-
-struct tsens_tm_device {
-	struct tsens_tm_device_sensor sensor[TSENS_NUM_SENSORS];
-	bool prev_reading_avail;
-	int offset;
-	struct work_struct work;
-	uint32_t pm_tsens_thr_data;
-};
 
 struct tsens_tm_device *tmdev;
 

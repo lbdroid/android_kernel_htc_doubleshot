@@ -149,6 +149,25 @@
 #include <mach/perflock.h>
 #endif
 
+#include <linux/ion.h>
+#include <mach/ion.h>
+
+#define PHY_BASE_ADDR1       0x48000000
+
+#define MSM_ION_SF_SIZE      0x2C00000
+#define MSM_ION_CAMERA_SIZE  0x2000000
+#define MSM_ION_MM_FW_SIZE   0x200000
+#define MSM_ION_MM_SIZE      0x3D00000
+#define MSM_ION_MFC_SIZE     0x100000
+#define MSM_ION_WB_SIZE      0x2FD000
+#define MSM_ION_AUDIO_SIZE   0x4CF000
+
+#define MSM_ION_HEAP_NUM     8
+
+#define MSM_ION_CAMERA_BASE  0x40E00000
+#define MSM_ION_WB_BASE      0x46400000
+#define MSM_ION_AUDIO_BASE   0x6FB00000
+
 #ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
 int set_two_phase_freq(int cpufreq);
 #ifdef CONFIG_CPU_FREQ_GOV_INTELLIDEMAND
@@ -1984,6 +2003,51 @@ static struct platform_device msm_batt_device = {
 };
 #endif
 
+#ifdef CONFIG_ANDROID_PMEM
+#define PMEM_BUS_WIDTH(_bw) \
+	{ \
+		.vectors = &(struct msm_bus_vectors){ \
+			.src = MSM_BUS_MASTER_AMPSS_M0, \
+			.dst = MSM_BUS_SLAVE_SMI, \
+			.ib = (_bw), \
+			.ab = 0, \
+		}, \
+	.num_paths = 1, \
+	}
+
+static struct msm_bus_paths mem_smi_table[] = {
+	[0] = PMEM_BUS_WIDTH(0), 
+	[1] = PMEM_BUS_WIDTH(1), 
+};
+
+static struct msm_bus_scale_pdata smi_client_pdata = {
+	.usecase = mem_smi_table,
+	.num_usecases = ARRAY_SIZE(mem_smi_table),
+	.name = "mem_smi",
+};
+
+int request_smi_region(void *data)
+{
+	int bus_id = (int) data;
+
+	msm_bus_scale_client_update_request(bus_id, 1);
+	return 0;
+}
+
+int release_smi_region(void *data)
+{
+	int bus_id = (int) data;
+
+	msm_bus_scale_client_update_request(bus_id, 0);
+	return 0;
+}
+
+void *setup_smi_region(void)
+{
+	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
+}
+#endif
+
 static unsigned fb_size;
 static int __init fb_size_setup(char *p)
 {
@@ -2105,12 +2169,6 @@ static struct platform_device android_pmem_audio_device = {
 static struct msm_bus_paths pmem_smi_table[] = {
 	[0] = PMEM_BUS_WIDTH(0), /* Off */
 	[1] = PMEM_BUS_WIDTH(1), /* On */
-};
-
-static struct msm_bus_scale_pdata smi_client_pdata = {
-	.usecase = pmem_smi_table,
-	.num_usecases = ARRAY_SIZE(pmem_smi_table),
-	.name = "pmem_smi",
 };
 
 void pmem_request_smi_region(void *data)
@@ -3631,17 +3689,6 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 	},
 };
 
-static void __init reserve_ion_memory(void)
-{
-#ifdef CONFIG_ION_MSM
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
-	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
-	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
-#endif
-}
-
 #ifdef CONFIG_ANDROID_PMEM
 static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
 {
@@ -3703,12 +3750,14 @@ static void __init reserve_ion_memory(void)
 #endif
 }
 
+static void __init reserve_mdp_memory(void)
+{
+	doubleshot_mdp_writeback();
+}
+
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
-#ifdef CONFIG_ION_MSM
-	reserve_ion_memory(msm8x60_reserve_table);
-#endif
-	size_pmem_devices();
+	reserve_ion_memory();
 	reserve_mdp_memory();
 }
 

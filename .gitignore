@@ -9,6 +9,9 @@
 #
 # Normal rules
 #
+~_O
+build_log.txt
+Untitled Document*
 .*
 *.o
 *.o.*

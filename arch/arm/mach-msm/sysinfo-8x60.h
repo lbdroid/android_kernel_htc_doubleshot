@@ -17,4 +17,7 @@
 
 extern void sysinfo_proc_init(void);
 
+extern int msm_dump_gpios(struct seq_file *m, int curr_len, char *gpio_buffer);
+extern int pm8901_dump_mpp(struct seq_file *m, int curr_len, char *gpio_buffer);
+
 #endif
